@@ -3,34 +3,34 @@ import { esc, fmtDate, page } from "./layout.ts";
 
 export function dashboardPage(plans: PlanSummary[], email: string): string {
   const cards = plans.length
-    ? plans
+    ? `<div class="card-grid">${plans
         .map(
           (p) => `
-    <a class="card" href="/p/${esc(p.slug)}">
-      <div class="row">
-        <h2>${esc(p.title)}</h2>
-        <span class="badge">v${p.latest_version}</span>
-      </div>
-      <div class="muted">
-        Updated ${esc(fmtDate(p.updated_at))} &middot;
-        <a href="/p/${esc(p.slug)}/versions">${p.version_count} version${p.version_count === 1 ? "" : "s"}</a>
-      </div>
-    </a>`,
+        <div class="card">
+          <div class="card-row">
+            <h2 class="card-title"><a href="/p/${esc(p.slug)}">${esc(p.title)}</a></h2>
+            <span class="badge">v${p.latest_version}</span>
+          </div>
+          <p class="card-meta">
+            Updated ${esc(fmtDate(p.updated_at))} &middot;
+            <a href="/p/${esc(p.slug)}/versions">${p.version_count} version${p.version_count === 1 ? "" : "s"}</a>
+          </p>
+        </div>`,
         )
-        .join("")
-    : `<p class="muted">No plans yet. Publish one with the CLI to see it here.</p>`;
+        .join("")}</div>`
+    : `<div class="empty">No plans yet. Publish one with <code>bin/publish.mjs</code> and it'll show up here.</div>`;
 
   const identity = email
     ? `Signed in as ${esc(email)} &middot; <a href="/auth/logout">sign out</a>`
     : `Auth disabled`;
 
   const body = `
-    <header>
+    <header class="page-header">
       <h1>HTML Plans</h1>
-      <p class="muted">${identity}</p>
+      <p class="subtitle">${identity}</p>
     </header>
     ${cards}
-    <footer class="muted">Durable URLs. New publishes create a new version at the same link.</footer>`;
+    <footer>Durable URLs. Publishing again creates a new version at the same link.</footer>`;
 
   return page("HTML Plans", body);
 }

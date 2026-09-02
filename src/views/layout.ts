@@ -17,44 +17,118 @@ export function fmtDate(d: Date): string {
   });
 }
 
+// shadcn-style design tokens (zinc), reproduced as plain CSS variables so the
+// service keeps its zero-build, server-rendered footprint. Colors are HSL
+// channels consumed via hsl(var(--token)). Dark mode follows the OS.
 const STYLES = `
-  :root { color-scheme: light dark; }
-  * { box-sizing: border-box; }
-  body {
-    font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
-    margin: 0; padding: 2.5rem 1.5rem; max-width: 860px; margin-inline: auto;
-    color: #1a1a1a; background: #fafafa;
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
+    --card: 0 0% 100%;
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+    --border: 240 5.9% 90%;
+    --accent: 240 4.8% 95.9%;
+    --primary: 240 5.9% 10%;
+    --primary-foreground: 0 0% 98%;
+    --ring: 240 5% 65%;
+    --radius: 0.65rem;
   }
   @media (prefers-color-scheme: dark) {
-    body { color: #e6e6e6; background: #16181d; }
-    a { color: #7aa2ff; }
-    .card { background: #1e2128 !important; border-color: #2c3038 !important; }
-    .muted { color: #9aa0aa !important; }
-    .banner { background: #2a2410 !important; border-color: #4d4320 !important; color: #f0e6c0 !important; }
+    :root {
+      --background: 240 10% 3.9%;
+      --foreground: 0 0% 98%;
+      --card: 240 6% 10%;
+      --muted: 240 3.7% 15.9%;
+      --muted-foreground: 240 5% 64.9%;
+      --border: 240 3.7% 15.9%;
+      --accent: 240 3.7% 15.9%;
+      --primary: 0 0% 98%;
+      --primary-foreground: 240 5.9% 10%;
+      --ring: 240 4.9% 40%;
+    }
   }
-  h1 { font-size: 1.5rem; margin: 0 0 0.25rem; }
-  header p { margin: 0 0 2rem; }
-  a { color: #2b5fff; text-decoration: none; }
-  a:hover { text-decoration: underline; }
-  .muted { color: #666; font-size: 0.85rem; }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    font-size: 14px; line-height: 1.6; letter-spacing: -0.006em;
+    margin: 0; padding: 3rem 1.5rem; color: hsl(var(--foreground));
+    background: hsl(var(--background));
+    -webkit-font-smoothing: antialiased;
+  }
+  .container { max-width: 760px; margin-inline: auto; }
+
+  .page-header { margin-bottom: 2rem; }
+  h1 { font-size: 1.6rem; font-weight: 600; letter-spacing: -0.02em; margin: 0 0 0.35rem; }
+  .subtitle { color: hsl(var(--muted-foreground)); font-size: 0.85rem; margin: 0; }
+  .subtitle a, .link { color: hsl(var(--foreground)); text-decoration: none; font-weight: 500; }
+  .subtitle a:hover, .link:hover { text-decoration: underline; }
+
+  .card-grid { display: flex; flex-direction: column; gap: 0.6rem; }
   .card {
-    display: block; background: #fff; border: 1px solid #e5e5e5; border-radius: 10px;
-    padding: 1rem 1.25rem; margin-bottom: 0.75rem; text-decoration: none; color: inherit;
+    position: relative; display: block; color: inherit;
+    background: hsl(var(--card)); border: 1px solid hsl(var(--border));
+    border-radius: var(--radius); padding: 1rem 1.15rem;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.05s ease;
   }
-  .card:hover { border-color: #2b5fff; text-decoration: none; }
-  .card h2 { font-size: 1.05rem; margin: 0 0 0.35rem; }
-  .row { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; }
+  .card:hover {
+    border-color: hsl(var(--ring));
+    box-shadow: 0 1px 2px hsl(var(--foreground) / 0.04), 0 6px 20px hsl(var(--foreground) / 0.05);
+  }
+  .card:active { transform: translateY(0.5px); }
+  .card-row { display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
+  .card-title { font-size: 1rem; font-weight: 600; letter-spacing: -0.01em; margin: 0; }
+  /* Stretched-link: the title anchor covers the whole card, so clicking
+     anywhere opens the plan, without nesting anchors. */
+  .card-title a { color: inherit; text-decoration: none; }
+  .card-title a::after { content: ""; position: absolute; inset: 0; z-index: 0; }
+  .card-meta { color: hsl(var(--muted-foreground)); font-size: 0.8rem; margin: 0.4rem 0 0; }
+  .card-meta a { position: relative; z-index: 1; color: hsl(var(--muted-foreground)); text-decoration: underline; text-underline-offset: 2px; }
+  .card-meta a:hover { color: hsl(var(--foreground)); }
+
   .badge {
-    font-size: 0.75rem; background: #eef1f8; color: #33415c; border-radius: 20px;
-    padding: 0.1rem 0.55rem; white-space: nowrap;
+    display: inline-flex; align-items: center; font-size: 0.72rem; font-weight: 500;
+    line-height: 1; padding: 0.32rem 0.6rem; border-radius: 999px; white-space: nowrap;
+    background: hsl(var(--muted)); color: hsl(var(--muted-foreground));
+    border: 1px solid hsl(var(--border));
   }
-  .banner {
-    position: sticky; top: 0; background: #fff8e1; border-bottom: 1px solid #f0d98c;
-    color: #6b5900; padding: 0.6rem 1rem; font-size: 0.85rem; text-align: center; z-index: 9999;
+  .badge-solid { background: hsl(var(--primary)); color: hsl(var(--primary-foreground)); border-color: transparent; }
+
+  .empty {
+    border: 1px dashed hsl(var(--border)); border-radius: var(--radius);
+    padding: 2.5rem 1.5rem; text-align: center; color: hsl(var(--muted-foreground));
   }
-  ul.versions { list-style: none; padding: 0; }
-  ul.versions li { padding: 0.6rem 0; border-bottom: 1px solid #e5e5e5; }
-  footer { margin-top: 2.5rem; }
+  .empty code { background: hsl(var(--muted)); padding: 0.15rem 0.4rem; border-radius: 6px; font-size: 0.85em; }
+
+  .version-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.5rem; }
+  .version-item {
+    position: relative; display: flex; align-items: center; gap: 0.75rem;
+    background: hsl(var(--card)); border: 1px solid hsl(var(--border));
+    border-radius: var(--radius); padding: 0.8rem 1rem;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+  .version-item:hover {
+    border-color: hsl(var(--ring));
+    box-shadow: 0 1px 2px hsl(var(--foreground) / 0.04), 0 6px 20px hsl(var(--foreground) / 0.05);
+  }
+  .version-item .num { font-weight: 600; text-decoration: none; color: hsl(var(--foreground)); }
+  /* Whole-row click: the version anchor stretches over the entire row. */
+  .version-item .num::after { content: ""; position: absolute; inset: 0; z-index: 0; }
+  .version-item .when { color: hsl(var(--muted-foreground)); font-size: 0.8rem; margin-left: auto; }
+
+  footer { margin-top: 2.5rem; color: hsl(var(--muted-foreground)); font-size: 0.8rem; }
+
+  .prose p { margin: 0 0 1rem; }
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 0.85rem; font-weight: 500; text-decoration: none;
+    padding: 0.5rem 0.9rem; border-radius: calc(var(--radius) - 0.15rem);
+    background: hsl(var(--primary)); color: hsl(var(--primary-foreground));
+    border: 1px solid transparent;
+  }
+  .btn:hover { opacity: 0.9; }
 `;
 
 export function page(title: string, body: string): string {
@@ -65,8 +139,11 @@ export function page(title: string, body: string): string {
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex, nofollow">
   <title>${esc(title)}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <style>${STYLES}</style>
 </head>
-<body>${body}</body>
+<body><div class="container">${body}</div></body>
 </html>`;
 }

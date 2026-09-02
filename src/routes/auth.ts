@@ -23,9 +23,9 @@ authRoutes.get("/callback", async (c) => {
   return c.html(
     page(
       "Access denied",
-      `<header><h1>Access denied</h1></header>
-       <p>${detail}</p>
-       <p><a href="/auth/login">Try again</a></p>`,
+      `<header class="page-header"><h1>Access denied</h1></header>
+       <div class="prose"><p>${detail}</p></div>
+       <p><a class="btn" href="/auth/login">Try again</a></p>`,
     ),
     403,
   );

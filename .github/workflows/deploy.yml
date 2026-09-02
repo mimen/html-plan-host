@@ -1,0 +1,25 @@
+name: Deploy to Heroku
+
+# Auto-deploy on every push to main. Pushing to the Heroku git remote triggers
+# Heroku's container build via heroku.yml. Only pushes to main run this, so a
+# fork PR can never reach the HEROKU_API_KEY secret.
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: heroku-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Push to Heroku
+        env:
+          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+        run: |
+          git push "https://heroku:${HEROKU_API_KEY}@git.heroku.com/milad-plans.git" HEAD:refs/heads/main

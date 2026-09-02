@@ -1,0 +1,12 @@
+{
+  "name": "html-plan-host",
+  "description": "Host, version, and share HTML plans at durable URLs. Bundles the agent skills for pushing plans to a deployment and (soon) authoring them.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Milad Imen",
+    "url": "https://github.com/mimen"
+  },
+  "homepage": "https://github.com/mimen/html-plan-host",
+  "repository": "https://github.com/mimen/html-plan-host",
+  "keywords": ["html", "plans", "docs", "publishing", "heroku"]
+}

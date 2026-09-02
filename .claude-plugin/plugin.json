@@ -1,6 +1,6 @@
 {
   "name": "html-plan-host",
-  "description": "Host, version, and share HTML plans at durable URLs. Bundles the agent skills for pushing plans to a deployment and (soon) authoring them.",
+  "description": "Host, version, and share HTML plans at durable URLs. Bundles the agent skills for authoring plans (html-plan) and pushing them to a deployment (html-plan-push).",
   "version": "0.1.0",
   "author": {
     "name": "Milad Imen",

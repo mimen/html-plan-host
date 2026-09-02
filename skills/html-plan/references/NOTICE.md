@@ -11,6 +11,10 @@ here. Each vendored `SKILL.md` also carries its credit in its own frontmatter
 | `html-research-reports` | Fiverr Labs | [f-labs-io/agent-html-skills](https://github.com/f-labs-io/agent-html-skills) | MIT |
 | `html-architecture-diagrams` | Fiverr Labs | [f-labs-io/agent-html-skills](https://github.com/f-labs-io/agent-html-skills) | MIT |
 | `html-svg-diagrams` | Fiverr Labs | [f-labs-io/agent-html-skills](https://github.com/f-labs-io/agent-html-skills) | MIT |
+| `html-timeline-roadmap` | Fiverr Labs | [f-labs-io/agent-html-skills](https://github.com/f-labs-io/agent-html-skills) | MIT |
+| `html-erd-explorer` | Fiverr Labs | [f-labs-io/agent-html-skills](https://github.com/f-labs-io/agent-html-skills) | MIT |
+| `html-comparison-matrix` | Fiverr Labs | [f-labs-io/agent-html-skills](https://github.com/f-labs-io/agent-html-skills) | MIT |
+| `html-data-explorer` | Fiverr Labs | [f-labs-io/agent-html-skills](https://github.com/f-labs-io/agent-html-skills) | MIT |
 | `unslop` | Lauren Tan | [michael-denyer/pstack-claude](https://github.com/michael-denyer/pstack-claude) | MIT |
 | `technical-writing` | Lauren Tan | [michael-denyer/pstack-claude](https://github.com/michael-denyer/pstack-claude) | MIT |
 

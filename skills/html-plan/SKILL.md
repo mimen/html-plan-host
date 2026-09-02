@@ -13,36 +13,25 @@ report, reference, or plan. This skill is thin on purpose. It composes a few
 capabilities and adds the house conventions that make the result readable and
 citable, then publishes it to a durable URL.
 
-## Composed skills (use local, else the vendored copy)
+## Reference skills
 
-For each capability below, prefer the locally installed skill and invoke it
-rather than restating its rules. If it is not installed, read the full skill
-vendored under `references/<name>/SKILL.md` (copied verbatim from its source,
-see `references/NOTICE.md` for attribution). Load these on demand, not up front.
+For each skill below, prefer the locally installed version and invoke it rather
+than restating its rules. If it is not installed, read the vendored copy at
+`references/<name>/SKILL.md` (verbatim, attributed in `references/NOTICE.md`).
+Load them on demand, not up front. The publish step, **html-plan-push**, ships
+in this plugin, see Deliver.
 
-- **html-research-reports** is the spine: the self-contained HTML file, the core
-  structure (TL;DR, navigable sections, per-section sources), the mandatory
-  secret-hygiene grep gate, and the deliberate-aesthetic rule. Read it when
-  starting the document. Fallback: `references/html-research-reports/SKILL.md`.
-- **html-architecture-diagrams** for "what connects to what" and data-flow
-  pictures; **html-svg-diagrams** for other diagram shapes. Read one when adding
-  a diagram. Fallbacks: `references/html-architecture-diagrams/SKILL.md`,
-  `references/html-svg-diagrams/SKILL.md`.
-- **unslop** and **technical-writing** apply to every line. Fallbacks:
-  `references/unslop/SKILL.md`, `references/technical-writing/SKILL.md`.
-- **html-plan-push** (ships in this plugin) is the publish step, see Deliver.
-
-## Situational skills (reach for these when the content calls for it)
-
-Not every plan needs these. When a plan includes the thing named, prefer the
-locally installed skill; if absent, its source is
-[f-labs-io/agent-html-skills](https://github.com/f-labs-io/agent-html-skills).
-They are referenced, not vendored, to keep this plugin small.
-
-- A rollout, phased plan, or timeline: **html-timeline-roadmap**.
-- A database schema or data model: **html-erd-explorer**.
-- An options or tradeoff evaluation (build vs buy, picking a library): **html-comparison-matrix**.
-- A dataset or metrics to browse or chart: **html-data-explorer**.
+| Skill | When to use |
+| --- | --- |
+| **html-research-reports** | Always, it's the spine. Self-contained HTML, TL;DR box, navigable sections, per-section sources, the secret-hygiene grep gate, deliberate aesthetic. Read it first. |
+| **unslop** | Always, every line. Cut AI tells. |
+| **technical-writing** | Always, every line. Diátaxis structure and sentence discipline. |
+| **html-architecture-diagrams** | A "what connects to what", data-flow, or deployment-topology picture. |
+| **html-svg-diagrams** | Any other diagram: flowchart, sequence, state machine, request/response timeline. |
+| **html-timeline-roadmap** | A rollout, phased plan, or timeline. |
+| **html-erd-explorer** | A database schema or data model. |
+| **html-comparison-matrix** | An options or build-vs-buy evaluation. |
+| **html-data-explorer** | A dataset or metrics to browse or chart. |
 
 ## House structure
 

@@ -17,6 +17,11 @@ export function fmtDate(d: Date): string {
   });
 }
 
+// Compact form for the thin top bar, e.g. "Sep 2".
+export function fmtShort(d: Date): string {
+  return new Date(d).toLocaleString("en-US", { month: "short", day: "numeric" });
+}
+
 // shadcn-style design tokens (zinc), reproduced as plain CSS variables so the
 // service keeps its zero-build, server-rendered footprint. Colors are HSL
 // channels consumed via hsl(var(--token)). Dark mode follows the OS.
@@ -104,7 +109,7 @@ const STYLES = `
 
   .version-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.5rem; }
   .version-item {
-    position: relative; display: flex; align-items: center; gap: 0.75rem;
+    position: relative; display: flex; flex-direction: column; gap: 0.4rem;
     background: hsl(var(--card)); border: 1px solid hsl(var(--border));
     border-radius: var(--radius); padding: 0.8rem 1rem;
     transition: border-color 0.15s ease, box-shadow 0.15s ease;
@@ -113,10 +118,12 @@ const STYLES = `
     border-color: hsl(var(--ring));
     box-shadow: 0 1px 2px hsl(var(--foreground) / 0.04), 0 6px 20px hsl(var(--foreground) / 0.05);
   }
+  .vi-head { display: flex; align-items: center; gap: 0.75rem; }
   .version-item .num { font-weight: 600; text-decoration: none; color: hsl(var(--foreground)); }
   /* Whole-row click: the version anchor stretches over the entire row. */
   .version-item .num::after { content: ""; position: absolute; inset: 0; z-index: 0; }
   .version-item .when { color: hsl(var(--muted-foreground)); font-size: 0.8rem; margin-left: auto; }
+  .vi-summary { margin: 0; color: hsl(var(--muted-foreground)); font-size: 0.85rem; line-height: 1.45; }
 
   .section-label {
     font-size: 0.74rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;

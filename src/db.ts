@@ -25,6 +25,7 @@ export async function initSchema(): Promise<void> {
       slug text unique not null,
       title text not null,
       draft_html text,
+      draft_summary text,
       draft_updated_at timestamptz,
       draft_updated_by text,
       draft_dirty boolean not null default true,
@@ -39,6 +40,7 @@ export async function initSchema(): Promise<void> {
       version integer not null,
       title text,
       html text not null,
+      summary text,
       published_by text,
       created_at timestamptz not null default now(),
       unique (plan_id, version)
@@ -51,7 +53,9 @@ export async function initSchema(): Promise<void> {
   await sql`alter table plans add column if not exists draft_updated_at timestamptz`;
   await sql`alter table plans add column if not exists draft_updated_by text`;
   await sql`alter table plans add column if not exists draft_dirty boolean not null default true`;
+  await sql`alter table plans add column if not exists draft_summary text`;
   await sql`alter table plan_versions add column if not exists title text`;
+  await sql`alter table plan_versions add column if not exists summary text`;
 
   await sql`
     update plan_versions v set title = p.title

@@ -6,6 +6,7 @@ export interface Plan {
   slug: string;
   title: string;
   draft_html: string | null;
+  draft_summary: string | null;
   draft_updated_at: Date | null;
   draft_updated_by: string | null;
   draft_dirty: boolean;
@@ -19,6 +20,7 @@ export interface PlanVersion {
   version: number;
   title: string | null;
   html: string;
+  summary: string | null;
   published_by: string | null;
   created_at: Date;
 }
@@ -75,7 +77,7 @@ export async function getLatestPublishedVersion(planId: string): Promise<PlanVer
 
 export async function listVersions(planId: string): Promise<PlanVersion[]> {
   return sql<PlanVersion[]>`
-    select id, plan_id, version, title, published_by, created_at, '' as html
+    select id, plan_id, version, title, summary, published_by, created_at, '' as html
     from plan_versions where plan_id = ${planId} order by version desc
   `;
 }
@@ -95,15 +97,20 @@ export async function pushDraft(input: {
   slug?: string;
   title: string;
   html: string;
+  summary?: string;
   updatedBy: string;
 }): Promise<PushResult> {
+  const summary = input.summary ?? null;
   const existing = input.slug ? await getPlanBySlug(input.slug) : null;
 
   if (existing) {
+    // Keep the prior summary when a push omits one, so a summary-less push
+    // doesn't erase the change description accumulated for this draft.
     await sql`
       update plans set
         title = ${input.title},
         draft_html = ${input.html},
+        draft_summary = coalesce(${summary}, draft_summary),
         draft_updated_at = now(),
         draft_updated_by = ${input.updatedBy},
         draft_dirty = true,
@@ -115,8 +122,8 @@ export async function pushDraft(input: {
 
   const slug = input.slug ?? (await uniqueSlug(input.title));
   const [plan] = await sql<Plan[]>`
-    insert into plans (slug, title, draft_html, draft_updated_at, draft_updated_by, draft_dirty)
-    values (${slug}, ${input.title}, ${input.html}, now(), ${input.updatedBy}, true)
+    insert into plans (slug, title, draft_html, draft_summary, draft_updated_at, draft_updated_by, draft_dirty)
+    values (${slug}, ${input.title}, ${input.html}, ${summary}, now(), ${input.updatedBy}, true)
     returning *
   `;
   if (!plan) throw new Error("Failed to insert plan");
@@ -139,10 +146,11 @@ export async function publishDraft(
     `;
     const next = row?.next ?? 1;
     await tx`
-      insert into plan_versions (plan_id, version, title, html, published_by)
-      values (${planId}, ${next}, ${plan.title}, ${plan.draft_html}, ${publishedBy})
+      insert into plan_versions (plan_id, version, title, html, summary, published_by)
+      values (${planId}, ${next}, ${plan.title}, ${plan.draft_html}, ${plan.draft_summary}, ${publishedBy})
     `;
-    await tx`update plans set draft_dirty = false, updated_at = now() where id = ${planId}`;
+    // The draft's pending summary becomes this version's changelog, so clear it.
+    await tx`update plans set draft_dirty = false, draft_summary = null, updated_at = now() where id = ${planId}`;
     return { version: next };
   });
 }

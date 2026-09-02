@@ -7,6 +7,7 @@
 //
 // Usage:
 //   bun run bin/publish.mjs --file plan.html [--title "My Plan"] [--slug existing-slug]
+//     [--summary "what changed since the last published version"]
 //
 // Config (flags override env):
 //   --url    PLAN_HOST_URL      base URL of the service, e.g. https://milad-plans.herokuapp.com
@@ -79,6 +80,7 @@ const res = await fetch(`${baseUrl}/api/plans`, {
     slug: typeof args.slug === "string" ? args.slug : undefined,
     title,
     html,
+    summary: typeof args.summary === "string" ? args.summary : undefined,
     updatedBy,
   }),
 });

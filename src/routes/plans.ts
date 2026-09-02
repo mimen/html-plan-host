@@ -42,7 +42,14 @@ planRoutes.get("/p/:slug", async (c) => {
   return c.html(
     planFramePage(
       plan,
-      { kind: "version", version: latest.version, latest: latest.version, dirty: plan.draft_dirty },
+      {
+        kind: "version",
+        version: latest.version,
+        latest: latest.version,
+        dirty: plan.draft_dirty,
+        publishedAt: latest.created_at,
+        summary: latest.summary,
+      },
       `/p/${plan.slug}?raw=1`,
     ),
   );
@@ -60,7 +67,13 @@ planRoutes.get("/p/:slug/draft", async (c) => {
   return c.html(
     planFramePage(
       plan,
-      { kind: "draft", dirty: plan.draft_dirty, latestPublished: latest?.version ?? null },
+      {
+        kind: "draft",
+        dirty: plan.draft_dirty,
+        latestPublished: latest?.version ?? null,
+        updatedAt: plan.draft_updated_at,
+        summary: plan.draft_summary,
+      },
       `/p/${plan.slug}/draft?raw=1`,
     ),
   );
@@ -99,7 +112,14 @@ planRoutes.get("/p/:slug/v/:n", async (c) => {
   return c.html(
     planFramePage(
       plan,
-      { kind: "version", version: n, latest: latestNum, dirty: plan.draft_dirty },
+      {
+        kind: "version",
+        version: n,
+        latest: latestNum,
+        dirty: plan.draft_dirty,
+        publishedAt: version.created_at,
+        summary: version.summary,
+      },
       `/p/${plan.slug}/v/${n}?raw=1`,
     ),
   );

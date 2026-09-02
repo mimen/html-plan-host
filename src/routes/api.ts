@@ -17,6 +17,7 @@ interface PushBody {
   slug?: string;
   title?: string;
   html?: string;
+  summary?: string;
   updatedBy?: string;
 }
 
@@ -43,6 +44,7 @@ apiRoutes.post("/plans", async (c) => {
     slug: body.slug?.trim() || undefined,
     title,
     html,
+    summary: body.summary?.trim() || undefined,
     updatedBy: body.updatedBy?.trim() || "cli",
   });
 

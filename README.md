@@ -47,9 +47,21 @@ redirect URI.
    - `https://<your-app>.herokuapp.com/auth/callback` (production)
 3. Copy the client ID and secret into `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`.
 
-The service only checks that the returned email is verified and its domain is in
-`ALLOWED_EMAIL_DOMAINS`. Salesforce and Heroku corporate mail is Google
-Workspace, so any `@salesforce.com` / `@heroku.com` account can sign in.
+## Auth and access (config-driven)
+
+The service is deployment-agnostic. One codebase runs any number of Heroku apps,
+each shaped by its config vars.
+
+- **Auth is implicit.** Set both `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`
+  and sign-in is required. Leave them unset and reads are open (no login).
+- **`ALLOWED_EMAILS`** is a comma-separated list of glob patterns matched against
+  the signed-in email, required whenever auth is on:
+  - `*.salesforce.com, *.heroku.com` matches a domain and its subdomains
+  - `someone@gmail.com` matches one specific person
+  - `*` matches any verified Google account
+
+If auth is on and `ALLOWED_EMAILS` is empty, the app refuses to boot rather than
+locking everyone out or letting everyone in.
 
 ## Deploy to Heroku (container)
 
@@ -57,12 +69,14 @@ Workspace, so any `@salesforce.com` / `@heroku.com` account can sign in.
 heroku create milad-plans --stack container
 heroku addons:create heroku-postgresql:essential-0 -a milad-plans
 
+# Open reads (no login): omit the GOOGLE_* and ALLOWED_EMAILS vars below.
+# Gated reads: set all three.
 heroku config:set -a milad-plans \
   SESSION_SECRET="$(openssl rand -hex 32)" \
   PUBLISH_TOKEN="$(openssl rand -hex 32)" \
   GOOGLE_CLIENT_ID="..." \
   GOOGLE_CLIENT_SECRET="..." \
-  ALLOWED_EMAIL_DOMAINS="salesforce.com,heroku.com" \
+  ALLOWED_EMAILS="*.salesforce.com, *.heroku.com" \
   BASE_URL="https://milad-plans.herokuapp.com" \
   NODE_ENV="production"
 

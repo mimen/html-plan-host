@@ -4,6 +4,9 @@
   "private": true,
   "type": "module",
   "description": "Personal service for hosting versioned HTML plans behind Google SSO with durable URLs.",
+  "bin": {
+    "html-plan": "bin/html-plan.mjs"
+  },
   "scripts": {
     "start": "bun run src/index.ts",
     "dev": "bun --watch src/index.ts",

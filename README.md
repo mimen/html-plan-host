@@ -66,58 +66,84 @@ locking everyone out or letting everyone in.
 ## Deploy to Heroku (container)
 
 ```sh
-heroku create milad-plans --stack container
-heroku addons:create heroku-postgresql:essential-0 -a milad-plans
+APP=your-app-name   # globally unique on Heroku
 
-# Open reads (no login): omit the GOOGLE_* and ALLOWED_EMAILS vars below.
+heroku create "$APP" --stack container
+heroku addons:create heroku-postgresql:essential-0 -a "$APP"
+
+# Open reads (no login): omit the GOOGLE_* and ALLOWED_EMAILS vars.
 # Gated reads: set all three.
-heroku config:set -a milad-plans \
+heroku config:set -a "$APP" \
   SESSION_SECRET="$(openssl rand -hex 32)" \
   PUBLISH_TOKEN="$(openssl rand -hex 32)" \
   GOOGLE_CLIENT_ID="..." \
   GOOGLE_CLIENT_SECRET="..." \
   ALLOWED_EMAILS="*.salesforce.com, *.heroku.com" \
-  BASE_URL="https://milad-plans.herokuapp.com" \
   NODE_ENV="production"
 
-git init && git add -A && git commit -m "Initial html-plan-host"
-heroku git:remote -a milad-plans
-git push heroku main
+heroku git:remote -a "$APP"
+git push heroku main   # first deploy; heroku.yml builds the container
 ```
 
 `DATABASE_URL` is set automatically by the Postgres addon. The schema is created
 idempotently on boot, so there's no migration step.
 
+Heroku's default domain includes a random suffix (e.g.
+`your-app-name-a1b2c3.herokuapp.com`). Get the exact URL with
+`heroku apps:info -a "$APP"`. If you enable OAuth, set `BASE_URL` to that URL and
+add `<url>/auth/callback` as an authorized redirect URI on the Google client.
+
+For auto-deploy on every push to `main`, open the app's **Deploy** tab, connect
+this GitHub repo, and enable **Automatic deploys** (no CI wait needed). The
+dashboard builds the container from `heroku.yml`.
+
 Grab the publish token for the CLI:
 
 ```sh
-heroku config:get PUBLISH_TOKEN -a milad-plans
+heroku config:get PUBLISH_TOKEN -a "$APP"
 ```
 
-## Publishing plans
+## Pushing plans (CLI)
+
+The `html-plan` CLI pushes an HTML file to a plan's draft. Link it once to put
+it on your PATH:
 
 ```sh
-export PLAN_HOST_URL="https://milad-plans.herokuapp.com"
-export PLAN_HOST_TOKEN="<PUBLISH_TOKEN>"
-
-# Create a new plan (title is read from the HTML <title> if not passed):
-bun run bin/publish.mjs --file plan.html
-
-# ...prints a durable URL. To update that plan later, pass its slug:
-bun run bin/publish.mjs --file plan.html --slug mia-model-pipeline-x8fxoqpp
+bun link
 ```
 
-Publishing with an existing `--slug` appends a new version at the same URL;
-omitting `--slug` mints a new plan with a fresh unguessable slug.
+Then:
+
+```sh
+export PLAN_HOST_URL="https://your-app-name-a1b2c3.herokuapp.com"   # heroku apps:info -a <app>
+export PLAN_HOST_TOKEN="<PUBLISH_TOKEN>"                            # heroku config:get PUBLISH_TOKEN -a <app>
+
+# Create a new plan (title falls back to the HTML <title>):
+html-plan push --file plan.html --description "what this plan is about"
+
+# Update an existing plan's draft at the same durable URL:
+html-plan push --file plan.html --slug mia-model-pipeline-x8fxoqpp \
+  --summary "what changed since the last published version"
+```
+
+`push` writes the **draft** only. It never mints a published version, that's a
+human action in the web UI (the "Publish version" button in the top bar). Run
+`html-plan --help` for all options. Agents can also `POST /api/plans` directly
+with the bearer token instead of using the CLI.
 
 ## Routes
 
+Read routes require a Google session only when OAuth is configured; otherwise
+they're open.
+
 | Route | Auth | Purpose |
 | --- | --- | --- |
-| `GET /` | session | Dashboard: all plans, last-updated, version counts |
-| `GET /p/:slug` | session | Latest version of a plan |
-| `GET /p/:slug/versions` | session | Timestamped version list |
-| `GET /p/:slug/v/:n` | session | A specific old version (banner if not latest) |
-| `POST /api/plans` | bearer token | Publish/update a plan |
-| `GET /auth/login` `…/callback` `…/logout` | — | Google OAuth flow |
+| `GET /` | session | Dashboard of all plans |
+| `GET /p/:slug` | session | Latest published version (redirects to the draft if none published) |
+| `GET /p/:slug/draft` | session | The working draft |
+| `GET /p/:slug/versions` | session | Draft plus the published changelog |
+| `GET /p/:slug/v/:n` | session | A specific published version |
+| `POST /p/:slug/publish` | session | Mint a new version from the draft (human only) |
+| `POST /api/plans` | bearer token | Push a draft (create or update) |
+| `GET /auth/login` `…/callback` `…/logout` | — | Google OAuth flow (when configured) |
 | `GET /healthz` | — | Health check |

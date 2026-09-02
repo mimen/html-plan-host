@@ -44,6 +44,14 @@ export function planFramePage(
     : `<span class="badge stale">v${version} of ${latest}</span>`;
   const latestLink = isLatest ? "" : `<a href="/p/${esc(plan.slug)}">Latest</a>`;
 
+  // Versions are contiguous 1..latest, so adjacency needs no query.
+  const prev = version > 1
+    ? `<a class="nav" href="/p/${esc(plan.slug)}/v/${version - 1}" title="Older version">&lsaquo; v${version - 1}</a>`
+    : `<span class="nav off">&lsaquo;</span>`;
+  const next = version < latest
+    ? `<a class="nav" href="/p/${esc(plan.slug)}/v/${version + 1}" title="Newer version">v${version + 1} &rsaquo;</a>`
+    : `<span class="nav off">&rsaquo;</span>`;
+
   return `<!doctype html>
 <html lang="en">
 <head>
@@ -82,6 +90,10 @@ export function planFramePage(
       background: hsl(var(--chip)); padding: 0.3rem 0.55rem; border-radius: 999px; font-weight: 500;
     }
     .bar .badge.stale { color: hsl(var(--stale)); border-color: hsl(var(--stale) / 0.4); background: hsl(var(--stale) / 0.12); }
+    .bar .nav.off {
+      opacity: 0.3; padding: 0.32rem 0.55rem; border: 1px solid hsl(var(--border));
+      border-radius: 7px; cursor: default;
+    }
     .bar .spacer { flex: 1; }
     iframe { border: 0; width: 100%; height: calc(100% - 40px); display: block; background: #fff; }
   </style>
@@ -93,6 +105,7 @@ export function planFramePage(
     <span class="title">${esc(plan.title)}</span>
     ${status}
     <span class="spacer"></span>
+    ${prev}${next}
     ${latestLink}
     <a href="/p/${esc(plan.slug)}/versions">Versions</a>
   </div>

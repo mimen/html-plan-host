@@ -1,5 +1,9 @@
 #!/usr/bin/env bun
-// Publish or update an HTML plan on the host service.
+// Push an HTML plan draft to the host service.
+//
+// This updates the plan's DRAFT only. It never mints a published version. To
+// share a milestone, open the draft in the browser and click "Publish version"
+// (a human, session-gated action the token cannot perform).
 //
 // Usage:
 //   bun run bin/publish.mjs --file plan.html [--title "My Plan"] [--slug existing-slug]
@@ -8,8 +12,8 @@
 //   --url    PLAN_HOST_URL      base URL of the service, e.g. https://milad-plans.herokuapp.com
 //   --token  PLAN_HOST_TOKEN    the PUBLISH_TOKEN config var
 //
-// Updating: pass the --slug of an existing plan to add a new version at the
-// same durable URL. Omit --slug to create a new plan.
+// Pass the --slug of an existing plan to overwrite its draft. Omit --slug to
+// create a new plan (draft only, nothing published yet).
 
 import { readFileSync } from "node:fs";
 
@@ -62,7 +66,7 @@ try {
 const title = (typeof args.title === "string" && args.title) || titleFromHtml(html);
 if (!title) die("no title: pass --title or include a <title> in the HTML");
 
-const publishedBy =
+const updatedBy =
   process.env.PLAN_HOST_AUTHOR || process.env.USER || process.env.LOGNAME || "cli";
 
 const res = await fetch(`${baseUrl}/api/plans`, {
@@ -75,15 +79,16 @@ const res = await fetch(`${baseUrl}/api/plans`, {
     slug: typeof args.slug === "string" ? args.slug : undefined,
     title,
     html,
-    publishedBy,
+    updatedBy,
   }),
 });
 
 const payload = await res.json().catch(() => ({}));
 if (!res.ok) {
-  die(`publish failed (${res.status}): ${payload.error ?? "unknown error"}`);
+  die(`push failed (${res.status}): ${payload.error ?? "unknown error"}`);
 }
 
-const verb = payload.created ? "Created" : "Updated";
-console.log(`${verb} "${payload.title}" (version ${payload.version})`);
-console.log(payload.url);
+const verb = payload.created ? "Created draft" : "Updated draft";
+console.log(`${verb} for "${payload.title}"`);
+console.log(`  draft: ${payload.draftUrl}`);
+console.log(`  share: ${payload.shareUrl}  (publish the draft in the top bar to update this)`);

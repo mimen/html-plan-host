@@ -3,6 +3,19 @@ import { esc, fmtDate, page } from "./layout.ts";
 
 export function versionsPage(plan: Plan, versions: PlanVersion[]): string {
   const latest = versions[0]?.version ?? 0;
+  const draftNote = plan.draft_dirty
+    ? "unpublished changes"
+    : latest > 0
+      ? `matches v${latest}`
+      : "never published";
+  const draftWhen = plan.draft_updated_at ? esc(fmtDate(plan.draft_updated_at)) : "";
+
+  const draftRow = `<li class="version-item draft-row">
+    <a class="num" href="/p/${esc(plan.slug)}/draft">Working draft</a>
+    <span class="badge ${plan.draft_dirty ? "stale" : ""}">${draftNote}</span>
+    <span class="when">${draftWhen}</span>
+  </li>`;
+
   const items = versions
     .map((v) => {
       const isLatest = v.version === latest;
@@ -15,42 +28,66 @@ export function versionsPage(plan: Plan, versions: PlanVersion[]): string {
     })
     .join("");
 
+  const published = versions.length
+    ? `<ul class="version-list">${items}</ul>`
+    : `<div class="empty">No published versions yet. Open the draft and click <strong>Publish version</strong> to mint v1.</div>`;
+
   const body = `
     <header class="page-header">
       <h1>${esc(plan.title)}</h1>
-      <p class="subtitle">
-        <a href="/p/${esc(plan.slug)}">View latest</a> &middot;
-        <a href="/">All plans</a>
-      </p>
+      <p class="subtitle"><a href="/">All plans</a></p>
     </header>
-    <ul class="version-list">${items}</ul>`;
+    <ul class="version-list">${draftRow}</ul>
+    <h2 class="section-label">Published</h2>
+    ${published}`;
 
   return page(`Versions — ${plan.title}`, body);
 }
 
-// Wrapper page for viewing an old version: a thin bar on top with the plan
-// itself rendered untouched in an iframe below. The bar lives entirely outside
-// the plan document, so it can neither style nor be styled by the plan, and the
-// stored HTML is served byte-for-byte inside the frame.
-export function planFramePage(
-  plan: Plan,
-  version: number,
-  latest: number,
-  rawSrc: string,
-): string {
-  const isLatest = version >= latest;
-  const status = isLatest
-    ? `<span class="badge">v${version} &middot; latest</span>`
-    : `<span class="badge stale">v${version} of ${latest}</span>`;
-  const latestLink = isLatest ? "" : `<a href="/p/${esc(plan.slug)}">Latest</a>`;
+export type FrameView =
+  | { kind: "version"; version: number; latest: number; dirty: boolean }
+  | { kind: "draft"; dirty: boolean; latestPublished: number | null };
 
-  // Versions are contiguous 1..latest, so adjacency needs no query.
-  const prev = version > 1
-    ? `<a class="nav" href="/p/${esc(plan.slug)}/v/${version - 1}" title="Older version">&lsaquo; v${version - 1}</a>`
-    : `<span class="nav off">&lsaquo;</span>`;
-  const next = version < latest
-    ? `<a class="nav" href="/p/${esc(plan.slug)}/v/${version + 1}" title="Newer version">v${version + 1} &rsaquo;</a>`
-    : `<span class="nav off">&rsaquo;</span>`;
+// Wrapper page: a thin top bar plus the plan HTML in an untouched iframe below.
+// The bar adapts to what's being viewed (a published version or the draft), so
+// it can neither style nor be styled by the plan.
+export function planFramePage(plan: Plan, view: FrameView, rawSrc: string): string {
+  const slug = esc(plan.slug);
+  let chip: string;
+  let nav: string;
+
+  if (view.kind === "version") {
+    const isLatest = view.version >= view.latest;
+    chip = isLatest
+      ? `<span class="badge">v${view.version} &middot; latest</span>`
+      : `<span class="badge stale">v${view.version} of ${view.latest}</span>`;
+
+    const prev = view.version > 1
+      ? `<a class="nav" href="/p/${slug}/v/${view.version - 1}" title="Older version">&lsaquo; v${view.version - 1}</a>`
+      : `<span class="nav off">&lsaquo;</span>`;
+    const next = view.version < view.latest
+      ? `<a class="nav" href="/p/${slug}/v/${view.version + 1}" title="Newer version">v${view.version + 1} &rsaquo;</a>`
+      : `<span class="nav off">&rsaquo;</span>`;
+    const latestLink = isLatest ? "" : `<a href="/p/${slug}">Latest</a>`;
+    const draftBtn = view.dirty
+      ? `<a class="pill draft" href="/p/${slug}/draft">&#9679; Draft in progress</a>`
+      : "";
+
+    nav = `${prev}${next}${latestLink}${draftBtn}<a href="/p/${slug}/versions">Versions</a>`;
+  } else {
+    chip = view.dirty
+      ? `<span class="badge stale">Draft &middot; unpublished</span>`
+      : `<span class="badge">Draft &middot; up to date</span>`;
+
+    const publish = view.dirty
+      ? `<form method="post" action="/p/${slug}/publish" style="margin:0"><button type="submit" class="pill publish">Publish version</button></form>`
+      : `<span class="nav off">Up to date</span>`;
+    const publishedLink = view.latestPublished
+      ? `<a href="/p/${slug}">v${view.latestPublished} published</a>`
+      : "";
+
+    nav = `${publish}${publishedLink}<a href="/p/${slug}/versions">Versions</a>`;
+  }
 
   return `<!doctype html>
 <html lang="en">
@@ -64,11 +101,11 @@ export function planFramePage(
   <style>
     :root {
       --bar: 0 0% 100%; --fg: 240 10% 3.9%; --muted: 240 3.8% 46.1%;
-      --border: 240 5.9% 90%; --chip: 240 4.8% 95.9%; --stale: 38 92% 50%;
+      --border: 240 5.9% 90%; --chip: 240 4.8% 95.9%; --stale: 38 92% 45%; --blue: 217 91% 55%;
     }
     @media (prefers-color-scheme: dark) {
       :root { --bar: 240 6% 10%; --fg: 0 0% 98%; --muted: 240 5% 64.9%;
-        --border: 240 3.7% 15.9%; --chip: 240 3.7% 15.9%; --stale: 38 92% 55%; }
+        --border: 240 3.7% 15.9%; --chip: 240 3.7% 15.9%; --stale: 38 92% 60%; --blue: 217 91% 65%; }
     }
     html, body { margin: 0; height: 100%; }
     .bar {
@@ -79,21 +116,27 @@ export function planFramePage(
     }
     .bar .title { font-weight: 600; color: hsl(var(--fg)); }
     .bar .sep { opacity: 0.5; }
-    .bar .home { display: inline-flex; align-items: center; }
-    .bar a {
+    .bar a, .bar .nav {
       color: hsl(var(--fg)); text-decoration: none; padding: 0.32rem 0.55rem;
       border-radius: 7px; border: 1px solid hsl(var(--border));
     }
     .bar a:hover { background: hsl(var(--fg) / 0.05); }
+    .bar .nav.off { opacity: 0.3; cursor: default; }
     .bar .badge {
       color: hsl(var(--muted)); border: 1px solid hsl(var(--border));
       background: hsl(var(--chip)); padding: 0.3rem 0.55rem; border-radius: 999px; font-weight: 500;
     }
     .bar .badge.stale { color: hsl(var(--stale)); border-color: hsl(var(--stale) / 0.4); background: hsl(var(--stale) / 0.12); }
-    .bar .nav.off {
-      opacity: 0.3; padding: 0.32rem 0.55rem; border: 1px solid hsl(var(--border));
-      border-radius: 7px; cursor: default;
+    .bar .pill.draft {
+      color: hsl(var(--blue)); border-color: hsl(var(--blue) / 0.45); background: hsl(var(--blue) / 0.12); font-weight: 600;
     }
+    .bar .pill.draft:hover { background: hsl(var(--blue) / 0.2); }
+    .bar .pill.publish {
+      font: inherit; font-weight: 600; cursor: pointer;
+      color: hsl(var(--bar)); background: hsl(var(--fg)); border: 1px solid transparent;
+      padding: 0.36rem 0.7rem; border-radius: 7px;
+    }
+    .bar .pill.publish:hover { opacity: 0.9; }
     .bar .spacer { flex: 1; }
     iframe { border: 0; width: 100%; height: calc(100% - 40px); display: block; background: #fff; }
   </style>
@@ -103,13 +146,11 @@ export function planFramePage(
     <a class="home" href="/">Plans</a>
     <span class="sep">/</span>
     <span class="title">${esc(plan.title)}</span>
-    ${status}
+    ${chip}
     <span class="spacer"></span>
-    ${prev}${next}
-    ${latestLink}
-    <a href="/p/${esc(plan.slug)}/versions">Versions</a>
+    ${nav}
   </div>
-  <iframe src="${esc(rawSrc)}" title="${esc(plan.title)} (version ${version})"></iframe>
+  <iframe src="${esc(rawSrc)}" title="${esc(plan.title)}"></iframe>
 </body>
 </html>`;
 }

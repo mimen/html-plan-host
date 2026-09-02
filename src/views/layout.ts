@@ -118,6 +118,12 @@ const STYLES = `
   .version-item .num::after { content: ""; position: absolute; inset: 0; z-index: 0; }
   .version-item .when { color: hsl(var(--muted-foreground)); font-size: 0.8rem; margin-left: auto; }
 
+  .section-label {
+    font-size: 0.74rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;
+    color: hsl(var(--muted-foreground)); margin: 1.6rem 0 0.6rem;
+  }
+  .version-item.draft-row { border-style: dashed; }
+
   footer { margin-top: 2.5rem; color: hsl(var(--muted-foreground)); font-size: 0.8rem; }
 
   .prose p { margin: 0 0 1rem; }

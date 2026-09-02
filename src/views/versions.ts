@@ -3,18 +3,21 @@ import { esc, fmtDate, page } from "./layout.ts";
 
 export function versionsPage(plan: Plan, versions: PlanVersion[]): string {
   const latest = versions[0]?.version ?? 0;
-  const draftNote = plan.draft_dirty
-    ? "unpublished changes"
-    : latest > 0
-      ? `matches v${latest}`
-      : "never published";
-  const draftWhen = plan.draft_updated_at ? esc(fmtDate(plan.draft_updated_at)) : "";
 
-  const draftRow = `<li class="version-item draft-row">
-    <a class="num" href="/p/${esc(plan.slug)}/draft">Working draft</a>
-    <span class="badge ${plan.draft_dirty ? "stale" : ""}">${draftNote}</span>
-    <span class="when">${draftWhen}</span>
-  </li>`;
+  // Only surface the draft when it has something the published list doesn't:
+  // unpublished changes, or nothing published yet.
+  const showDraft = plan.draft_dirty || versions.length === 0;
+  const draftWhen = plan.draft_updated_at ? esc(fmtDate(plan.draft_updated_at)) : "";
+  const draftBlock = showDraft
+    ? `<h2 class="section-label">Draft</h2>
+       <ul class="version-list">
+         <li class="version-item draft-row">
+           <a class="num" href="/p/${esc(plan.slug)}/draft">Working draft</a>
+           <span class="badge stale">${plan.draft_dirty ? "unpublished changes" : "never published"}</span>
+           <span class="when">${draftWhen}</span>
+         </li>
+       </ul>`
+    : "";
 
   const items = versions
     .map((v) => {
@@ -37,7 +40,7 @@ export function versionsPage(plan: Plan, versions: PlanVersion[]): string {
       <h1>${esc(plan.title)}</h1>
       <p class="subtitle"><a href="/">All plans</a></p>
     </header>
-    <ul class="version-list">${draftRow}</ul>
+    ${draftBlock}
     <h2 class="section-label">Published</h2>
     ${published}`;
 
@@ -49,44 +52,36 @@ export type FrameView =
   | { kind: "draft"; dirty: boolean; latestPublished: number | null };
 
 // Wrapper page: a thin top bar plus the plan HTML in an untouched iframe below.
-// The bar adapts to what's being viewed (a published version or the draft), so
-// it can neither style nor be styled by the plan.
+// Layout is three stable zones. Left is the breadcrumb (the only bold element).
+// Center-right is the single version-info location (a pager, or the draft
+// state). Right is the contextual action then Versions, which is always last.
 export function planFramePage(plan: Plan, view: FrameView, rawSrc: string): string {
   const slug = esc(plan.slug);
-  let chip: string;
-  let nav: string;
+  let statusZone: string;
+  let action = "";
 
   if (view.kind === "version") {
     const isLatest = view.version >= view.latest;
-    chip = isLatest
-      ? `<span class="badge">v${view.version} &middot; latest</span>`
-      : `<span class="badge stale">v${view.version} of ${view.latest}</span>`;
-
     const prev = view.version > 1
-      ? `<a class="nav" href="/p/${slug}/v/${view.version - 1}" title="Older version">&lsaquo; v${view.version - 1}</a>`
-      : `<span class="nav off">&lsaquo;</span>`;
+      ? `<a class="arrow" href="/p/${slug}/v/${view.version - 1}" title="Older version">&lsaquo;</a>`
+      : `<span class="arrow off">&lsaquo;</span>`;
     const next = view.version < view.latest
-      ? `<a class="nav" href="/p/${slug}/v/${view.version + 1}" title="Newer version">v${view.version + 1} &rsaquo;</a>`
-      : `<span class="nav off">&rsaquo;</span>`;
-    const latestLink = isLatest ? "" : `<a href="/p/${slug}">Latest</a>`;
-    const draftBtn = view.dirty
-      ? `<a class="pill draft" href="/p/${slug}/draft">&#9679; Draft in progress</a>`
-      : "";
+      ? `<a class="arrow" href="/p/${slug}/v/${view.version + 1}" title="Newer version">&rsaquo;</a>`
+      : `<span class="arrow off">&rsaquo;</span>`;
+    const sub = isLatest ? "latest" : `of ${view.latest}`;
+    statusZone = `<span class="pager">${prev}<span class="state">v${view.version} <span class="sub">${sub}</span></span>${next}</span>`;
 
-    nav = `${prev}${next}${latestLink}${draftBtn}<a href="/p/${slug}/versions">Versions</a>`;
+    if (view.dirty) {
+      action = `<a class="btn accent" href="/p/${slug}/draft" title="View working draft"><span class="dot blue"></span>Draft</a>`;
+    }
   } else {
-    chip = view.dirty
-      ? `<span class="badge stale">Draft &middot; unpublished</span>`
-      : `<span class="badge">Draft &middot; up to date</span>`;
+    const sub = view.dirty ? "unpublished" : "up to date";
+    const dot = view.dirty ? "amber" : "";
+    statusZone = `<span class="state"><span class="dot ${dot}"></span>Draft <span class="sub">${sub}</span></span>`;
 
-    const publish = view.dirty
-      ? `<form method="post" action="/p/${slug}/publish" style="margin:0"><button type="submit" class="pill publish">Publish version</button></form>`
-      : `<span class="nav off">Up to date</span>`;
-    const publishedLink = view.latestPublished
-      ? `<a href="/p/${slug}">v${view.latestPublished} published</a>`
-      : "";
-
-    nav = `${publish}${publishedLink}<a href="/p/${slug}/versions">Versions</a>`;
+    if (view.dirty) {
+      action = `<form method="post" action="/p/${slug}/publish" style="margin:0"><button type="submit" class="btn primary">Publish version</button></form>`;
+    }
   }
 
   return `<!doctype html>
@@ -101,54 +96,62 @@ export function planFramePage(plan: Plan, view: FrameView, rawSrc: string): stri
   <style>
     :root {
       --bar: 0 0% 100%; --fg: 240 10% 3.9%; --muted: 240 3.8% 46.1%;
-      --border: 240 5.9% 90%; --chip: 240 4.8% 95.9%; --stale: 38 92% 45%; --blue: 217 91% 55%;
+      --border: 240 5.9% 90%; --stale: 38 92% 45%; --blue: 217 91% 55%;
     }
     @media (prefers-color-scheme: dark) {
       :root { --bar: 240 6% 10%; --fg: 0 0% 98%; --muted: 240 5% 64.9%;
-        --border: 240 3.7% 15.9%; --chip: 240 3.7% 15.9%; --stale: 38 92% 60%; --blue: 217 91% 65%; }
+        --border: 240 3.7% 15.9%; --stale: 38 92% 60%; --blue: 217 91% 65%; }
     }
     html, body { margin: 0; height: 100%; }
     .bar {
-      height: 40px; box-sizing: border-box; display: flex; align-items: center; gap: 0.55rem;
-      padding: 0 12px; font: 500 12.5px/1 "Inter", -apple-system, system-ui, sans-serif;
-      letter-spacing: -0.005em; color: hsl(var(--muted));
+      height: 44px; box-sizing: border-box; display: flex; align-items: center; gap: 0.4rem;
+      padding: 0 12px; font: 400 12.5px/1 "Inter", -apple-system, system-ui, sans-serif;
+      letter-spacing: -0.003em; color: hsl(var(--muted));
       background: hsl(var(--bar)); border-bottom: 1px solid hsl(var(--border));
     }
-    .bar .title { font-weight: 600; color: hsl(var(--fg)); }
-    .bar .sep { opacity: 0.5; }
-    .bar a, .bar .nav {
-      color: hsl(var(--fg)); text-decoration: none; padding: 0.32rem 0.55rem;
-      border-radius: 7px; border: 1px solid hsl(var(--border));
-    }
-    .bar a:hover { background: hsl(var(--fg) / 0.05); }
-    .bar .nav.off { opacity: 0.3; cursor: default; }
-    .bar .badge {
-      color: hsl(var(--muted)); border: 1px solid hsl(var(--border));
-      background: hsl(var(--chip)); padding: 0.3rem 0.55rem; border-radius: 999px; font-weight: 500;
-    }
-    .bar .badge.stale { color: hsl(var(--stale)); border-color: hsl(var(--stale) / 0.4); background: hsl(var(--stale) / 0.12); }
-    .bar .pill.draft {
-      color: hsl(var(--blue)); border-color: hsl(var(--blue) / 0.45); background: hsl(var(--blue) / 0.12); font-weight: 600;
-    }
-    .bar .pill.draft:hover { background: hsl(var(--blue) / 0.2); }
-    .bar .pill.publish {
-      font: inherit; font-weight: 600; cursor: pointer;
-      color: hsl(var(--bar)); background: hsl(var(--fg)); border: 1px solid transparent;
-      padding: 0.36rem 0.7rem; border-radius: 7px;
-    }
-    .bar .pill.publish:hover { opacity: 0.9; }
     .bar .spacer { flex: 1; }
-    iframe { border: 0; width: 100%; height: calc(100% - 40px); display: block; background: #fff; }
+
+    /* Zone 1: breadcrumb. The title is the one prominent element. */
+    .crumb { text-decoration: none; color: hsl(var(--muted)); padding: 0.3rem 0.4rem; border-radius: 6px; }
+    .crumb.home:hover { color: hsl(var(--fg)); background: hsl(var(--fg) / 0.05); }
+    .crumb.sep { padding: 0; opacity: 0.45; }
+    .crumb.title { color: hsl(var(--fg)); font-weight: 600; font-size: 13px; padding-left: 0.15rem; }
+
+    /* Zone 2: the single version-info location. */
+    .pager { display: inline-flex; align-items: center; gap: 0.1rem; }
+    .arrow { text-decoration: none; color: hsl(var(--muted)); font-size: 16px; padding: 0.2rem 0.4rem; border-radius: 6px; }
+    .arrow:hover { color: hsl(var(--fg)); background: hsl(var(--fg) / 0.05); }
+    .arrow.off { opacity: 0.25; }
+    .state { display: inline-flex; align-items: center; gap: 0.4rem; color: hsl(var(--fg)); font-weight: 500; padding: 0 0.35rem; }
+    .state .sub { color: hsl(var(--muted)); font-weight: 400; }
+    .dot { width: 7px; height: 7px; border-radius: 50%; background: hsl(var(--muted)); }
+    .dot.amber { background: hsl(var(--stale)); }
+    .dot.blue { background: hsl(var(--blue)); }
+
+    /* Zone 3: contextual action, then Versions (always last). */
+    .btn {
+      display: inline-flex; align-items: center; gap: 0.35rem; text-decoration: none;
+      font: 500 12.5px/1 "Inter", -apple-system, system-ui, sans-serif; cursor: pointer;
+      padding: 0.4rem 0.62rem; border-radius: 7px; border: 1px solid transparent; color: hsl(var(--muted));
+    }
+    .btn.ghost:hover { color: hsl(var(--fg)); background: hsl(var(--fg) / 0.05); }
+    .btn.accent { color: hsl(var(--blue)); background: hsl(var(--blue) / 0.1); }
+    .btn.accent:hover { background: hsl(var(--blue) / 0.18); }
+    .btn.primary { color: hsl(var(--bar)); background: hsl(var(--fg)); font-weight: 600; }
+    .btn.primary:hover { opacity: 0.9; }
+
+    iframe { border: 0; width: 100%; height: calc(100% - 44px); display: block; background: #fff; }
   </style>
 </head>
 <body>
   <div class="bar">
-    <a class="home" href="/">Plans</a>
-    <span class="sep">/</span>
-    <span class="title">${esc(plan.title)}</span>
-    ${chip}
+    <a class="crumb home" href="/">Plans</a>
+    <span class="crumb sep">/</span>
+    <span class="crumb title">${esc(plan.title)}</span>
     <span class="spacer"></span>
-    ${nav}
+    ${statusZone}
+    ${action}
+    <a class="btn ghost" href="/p/${slug}/versions">Versions</a>
   </div>
   <iframe src="${esc(rawSrc)}" title="${esc(plan.title)}"></iframe>
 </body>

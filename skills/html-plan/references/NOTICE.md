@@ -18,10 +18,6 @@ here. Each vendored `SKILL.md` also carries its credit in its own frontmatter
 | `unslop` | Lauren Tan (poteto) | [cursor/plugins/pstack](https://github.com/cursor/plugins/tree/main/pstack) | MIT |
 | `technical-writing` | Lauren Tan (poteto) | [cursor/plugins/pstack](https://github.com/cursor/plugins/tree/main/pstack) | MIT |
 
-The `pstack` skills reach us via [michael-denyer/pstack-claude](https://github.com/michael-denyer/pstack-claude),
-a Claude Code port whose skill bodies were adapted from the original, but credit
-belongs to the original pstack.
-
 Both upstreams are MIT licensed. The MIT license requires that the copyright and
 permission notice travel with these copies:
 

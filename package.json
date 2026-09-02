@@ -1,0 +1,20 @@
+{
+  "name": "html-plan-host",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Personal service for hosting versioned HTML plans behind Google SSO with durable URLs.",
+  "scripts": {
+    "start": "bun run src/index.ts",
+    "dev": "bun --watch src/index.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "hono": "^4.6.14",
+    "postgres": "^3.4.5"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.1.14",
+    "typescript": "^5.7.2"
+  }
+}

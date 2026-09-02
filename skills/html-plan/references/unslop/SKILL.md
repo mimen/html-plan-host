@@ -3,9 +3,9 @@ name: unslop
 description: Cut AI tells from any writing. Must always apply.
 menu-description: clean up writing by removing AI tells
 metadata:
-  original_author: Lauren Tan
+  original_author: Lauren Tan (poteto)
   vendored_from: pstack
-  source_url: https://github.com/michael-denyer/pstack-claude
+  source_url: https://github.com/cursor/plugins/tree/main/pstack
   license: MIT
 ---
 

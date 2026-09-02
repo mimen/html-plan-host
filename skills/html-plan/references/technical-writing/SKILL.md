@@ -3,9 +3,9 @@ name: technical-writing
 description: "Layered technical-writing standard: Diátaxis structure, Google developer style sentences, STE instruction rules, Global English syntax. Use for /technical-writing or when writing or reviewing docs, RFCs, readmes, PR descriptions, or commit messages."
 menu-description: write docs, RFCs, readmes, PR descriptions, and commit messages to one layered standard
 metadata:
-  original_author: Lauren Tan
+  original_author: Lauren Tan (poteto)
   vendored_from: pstack
-  source_url: https://github.com/michael-denyer/pstack-claude
+  source_url: https://github.com/cursor/plugins/tree/main/pstack
   license: MIT
 ---
 

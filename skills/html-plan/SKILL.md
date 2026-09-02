@@ -32,6 +32,18 @@ see `references/NOTICE.md` for attribution). Load these on demand, not up front.
   `references/unslop/SKILL.md`, `references/technical-writing/SKILL.md`.
 - **html-plan-push** (ships in this plugin) is the publish step, see Deliver.
 
+## Situational skills (reach for these when the content calls for it)
+
+Not every plan needs these. When a plan includes the thing named, prefer the
+locally installed skill; if absent, its source is
+[f-labs-io/agent-html-skills](https://github.com/f-labs-io/agent-html-skills).
+They are referenced, not vendored, to keep this plugin small.
+
+- A rollout, phased plan, or timeline: **html-timeline-roadmap**.
+- A database schema or data model: **html-erd-explorer**.
+- An options or tradeoff evaluation (build vs buy, picking a library): **html-comparison-matrix**.
+- A dataset or metrics to browse or chart: **html-data-explorer**.
+
 ## House structure
 
 - A sticky sidebar table of contents with numbered sections.

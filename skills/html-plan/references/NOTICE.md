@@ -1,14 +1,23 @@
-# Vendored skills
+# Vendored skills and credits
 
-`skills/html-plan` composes other skills. Their full source is vendored here,
+`skills/html-plan` composes other skills. Their source is vendored here,
 verbatim, so this plugin works standalone. Prefer the locally installed skill
 when present; these copies are the fallback, and edits belong upstream, not
-here.
+here. Each vendored `SKILL.md` also carries its credit in its own frontmatter
+`metadata`.
 
-| Skill | Vendored from |
-| --- | --- |
-| `html-research-reports` | Milad's skills library (`~/.agents/skills`) |
-| `html-architecture-diagrams` | Milad's skills library |
-| `html-svg-diagrams` | Milad's skills library |
-| `unslop` | the `pstack` plugin (`pstack-claude` marketplace) |
-| `technical-writing` | the `pstack` plugin (`pstack-claude` marketplace) |
+| Skill | Original author | Source | License |
+| --- | --- | --- | --- |
+| `html-research-reports` | Fiverr Labs | [f-labs-io/agent-html-skills](https://github.com/f-labs-io/agent-html-skills) | MIT |
+| `html-architecture-diagrams` | Fiverr Labs | [f-labs-io/agent-html-skills](https://github.com/f-labs-io/agent-html-skills) | MIT |
+| `html-svg-diagrams` | Fiverr Labs | [f-labs-io/agent-html-skills](https://github.com/f-labs-io/agent-html-skills) | MIT |
+| `unslop` | Lauren Tan | [michael-denyer/pstack-claude](https://github.com/michael-denyer/pstack-claude) | MIT |
+| `technical-writing` | Lauren Tan | [michael-denyer/pstack-claude](https://github.com/michael-denyer/pstack-claude) | MIT |
+
+Both upstreams are MIT licensed. The MIT license requires that the copyright and
+permission notice travel with these copies:
+
+- html-* skills: Copyright © Fiverr Labs. See the LICENSE in
+  https://github.com/f-labs-io/agent-html-skills.
+- pstack skills: Copyright © Lauren Tan. See the LICENSE in
+  https://github.com/michael-denyer/pstack-claude.

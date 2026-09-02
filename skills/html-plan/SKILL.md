@@ -13,21 +13,23 @@ report, reference, or plan. This skill is thin on purpose. It composes a few
 capabilities and adds the house conventions that make the result readable and
 citable, then publishes it to a durable URL.
 
-## Composed skills (use local, else fall back)
+## Composed skills (use local, else the vendored copy)
 
-For each capability below, prefer the locally installed skill if present, and
-invoke it rather than restating its rules. If a skill is not installed, follow
-the distilled essentials in `references/composed-skills.md`, which is the
-minimal vendored fallback so this skill works standalone.
+For each capability below, prefer the locally installed skill and invoke it
+rather than restating its rules. If it is not installed, read the full skill
+vendored under `references/<name>/SKILL.md` (copied verbatim from its source,
+see `references/NOTICE.md` for attribution). Load these on demand, not up front.
 
 - **html-research-reports** is the spine: the self-contained HTML file, the core
   structure (TL;DR, navigable sections, per-section sources), the mandatory
-  secret-hygiene grep gate, and the "pick a deliberate aesthetic, not the
-  generic AI look" rule.
+  secret-hygiene grep gate, and the deliberate-aesthetic rule. Read it when
+  starting the document. Fallback: `references/html-research-reports/SKILL.md`.
 - **html-architecture-diagrams** for "what connects to what" and data-flow
-  pictures; **html-svg-diagrams** for other diagram shapes. Always inline SVG
-  with a legend, never a flexbox-and-arrows hack.
-- **unslop** and **technical-writing** apply to every line.
+  pictures; **html-svg-diagrams** for other diagram shapes. Read one when adding
+  a diagram. Fallbacks: `references/html-architecture-diagrams/SKILL.md`,
+  `references/html-svg-diagrams/SKILL.md`.
+- **unslop** and **technical-writing** apply to every line. Fallbacks:
+  `references/unslop/SKILL.md`, `references/technical-writing/SKILL.md`.
 - **html-plan-push** (ships in this plugin) is the publish step, see Deliver.
 
 ## House structure
@@ -61,8 +63,8 @@ minimal vendored fallback so this skill works standalone.
 ## Deliver
 
 1. Write the file to a descriptive path, `<topic>-<kind>.html`.
-2. Run the secret grep gate (from html-research-reports, or
-   `references/composed-skills.md`). It must exit clean before sharing.
+2. Run the secret grep gate (from html-research-reports, or its vendored copy
+   `references/html-research-reports/SKILL.md`). It must exit clean before sharing.
 3. Publish it with **html-plan-push** (prefer the local skill; it ships in this
    plugin). Push the file as the plan's draft and report the returned draft URL.
    Publishing a shareable version is the human's action in the web UI, do not

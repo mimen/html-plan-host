@@ -16,6 +16,7 @@ function tokenMatches(header: string | undefined): boolean {
 interface PushBody {
   slug?: string;
   title?: string;
+  description?: string;
   html?: string;
   summary?: string;
   updatedBy?: string;
@@ -43,6 +44,7 @@ apiRoutes.post("/plans", async (c) => {
   const result = await pushDraft({
     slug: body.slug?.trim() || undefined,
     title,
+    description: body.description?.trim() || undefined,
     html,
     summary: body.summary?.trim() || undefined,
     updatedBy: body.updatedBy?.trim() || "cli",

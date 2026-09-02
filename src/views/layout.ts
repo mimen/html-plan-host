@@ -68,6 +68,15 @@ const STYLES = `
   .page-header { margin-bottom: 2rem; }
   h1 { font-size: 1.6rem; font-weight: 600; letter-spacing: -0.02em; margin: 0 0 0.35rem; }
   .subtitle { color: hsl(var(--muted-foreground)); font-size: 0.85rem; margin: 0; }
+  /* Back navigation, above the page title. */
+  .back {
+    display: inline-flex; align-items: center; gap: 0.25rem; text-decoration: none;
+    color: hsl(var(--muted-foreground)); font-size: 0.85rem; font-weight: 500;
+    padding: 0.3rem 0.5rem 0.3rem 0.35rem; margin: 0 0 1rem -0.35rem; border-radius: 7px;
+  }
+  .back:hover { color: hsl(var(--foreground)); background: hsl(var(--foreground) / 0.05); }
+  .plan-desc { color: hsl(var(--muted-foreground)); font-size: 0.95rem; line-height: 1.5; margin: 0.35rem 0 0; max-width: 62ch; }
+  .card-desc { color: hsl(var(--muted-foreground)); font-size: 0.85rem; line-height: 1.45; margin: 0.4rem 0 0; }
   .subtitle a, .link { color: hsl(var(--foreground)); text-decoration: none; font-weight: 500; }
   .subtitle a:hover, .link:hover { text-decoration: underline; }
 

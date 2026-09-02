@@ -7,6 +7,7 @@
 //
 // Usage:
 //   bun run bin/publish.mjs --file plan.html [--title "My Plan"] [--slug existing-slug]
+//     [--description "what this plan is about"]
 //     [--summary "what changed since the last published version"]
 //
 // Config (flags override env):
@@ -79,6 +80,7 @@ const res = await fetch(`${baseUrl}/api/plans`, {
   body: JSON.stringify({
     slug: typeof args.slug === "string" ? args.slug : undefined,
     title,
+    description: typeof args.description === "string" ? args.description : undefined,
     html,
     summary: typeof args.summary === "string" ? args.summary : undefined,
     updatedBy,

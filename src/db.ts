@@ -24,6 +24,7 @@ export async function initSchema(): Promise<void> {
       id uuid primary key default gen_random_uuid(),
       slug text unique not null,
       title text not null,
+      description text,
       draft_html text,
       draft_summary text,
       draft_updated_at timestamptz,
@@ -53,6 +54,7 @@ export async function initSchema(): Promise<void> {
   await sql`alter table plans add column if not exists draft_updated_at timestamptz`;
   await sql`alter table plans add column if not exists draft_updated_by text`;
   await sql`alter table plans add column if not exists draft_dirty boolean not null default true`;
+  await sql`alter table plans add column if not exists description text`;
   await sql`alter table plans add column if not exists draft_summary text`;
   await sql`alter table plan_versions add column if not exists title text`;
   await sql`alter table plan_versions add column if not exists summary text`;

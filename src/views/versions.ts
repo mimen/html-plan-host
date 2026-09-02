@@ -45,10 +45,12 @@ export function versionsPage(plan: Plan, versions: PlanVersion[]): string {
     ? `<ul class="version-list">${items}</ul>`
     : `<div class="empty">No published versions yet. Open the draft and click <strong>Publish version</strong> to mint v1.</div>`;
 
+  const description = plan.description ? `<p class="plan-desc">${esc(plan.description)}</p>` : "";
   const body = `
+    <a class="back" href="/">&lsaquo; All plans</a>
     <header class="page-header">
       <h1>${esc(plan.title)}</h1>
-      <p class="subtitle"><a href="/">All plans</a></p>
+      ${description}
     </header>
     ${draftBlock}
     <h2 class="section-label">Published</h2>

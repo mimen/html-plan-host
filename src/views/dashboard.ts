@@ -18,12 +18,16 @@ export function dashboardPage(plans: PlanSummary[], email: string): string {
           const versionsLink = published
             ? `<a href="/p/${esc(p.slug)}/versions">${p.version_count} version${p.version_count === 1 ? "" : "s"}</a>${draftFlag}`
             : `<a href="/p/${esc(p.slug)}/versions">history</a>`;
+          const description = p.description
+            ? `<p class="card-desc">${esc(p.description)}</p>`
+            : "";
           return `
         <div class="card">
           <div class="card-row">
             <h2 class="card-title"><a href="${href}">${esc(p.title)}</a></h2>
             ${badge}
           </div>
+          ${description}
           <p class="card-meta">Updated ${esc(fmtDate(p.updated_at))} &middot; ${versionsLink}</p>
         </div>`;
         })

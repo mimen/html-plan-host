@@ -5,6 +5,7 @@ export interface Plan {
   id: string;
   slug: string;
   title: string;
+  description: string | null;
   draft_html: string | null;
   draft_summary: string | null;
   draft_updated_at: Date | null;
@@ -28,6 +29,7 @@ export interface PlanVersion {
 export interface PlanSummary {
   slug: string;
   title: string;
+  description: string | null;
   updated_at: Date;
   latest_version: number | null;
   version_count: number;
@@ -50,6 +52,7 @@ export async function listPlans(): Promise<PlanSummary[]> {
     select
       p.slug,
       p.title,
+      p.description,
       p.updated_at,
       p.draft_dirty,
       max(v.version) as latest_version,
@@ -96,19 +99,22 @@ async function uniqueSlug(title: string): Promise<string> {
 export async function pushDraft(input: {
   slug?: string;
   title: string;
+  description?: string;
   html: string;
   summary?: string;
   updatedBy: string;
 }): Promise<PushResult> {
   const summary = input.summary ?? null;
+  const description = input.description ?? null;
   const existing = input.slug ? await getPlanBySlug(input.slug) : null;
 
   if (existing) {
-    // Keep the prior summary when a push omits one, so a summary-less push
-    // doesn't erase the change description accumulated for this draft.
+    // coalesce so a push that omits description/summary keeps the prior value
+    // rather than wiping the plan's standing description or pending changelog.
     await sql`
       update plans set
         title = ${input.title},
+        description = coalesce(${description}, description),
         draft_html = ${input.html},
         draft_summary = coalesce(${summary}, draft_summary),
         draft_updated_at = now(),
@@ -122,8 +128,8 @@ export async function pushDraft(input: {
 
   const slug = input.slug ?? (await uniqueSlug(input.title));
   const [plan] = await sql<Plan[]>`
-    insert into plans (slug, title, draft_html, draft_summary, draft_updated_at, draft_updated_by, draft_dirty)
-    values (${slug}, ${input.title}, ${input.html}, ${summary}, now(), ${input.updatedBy}, true)
+    insert into plans (slug, title, description, draft_html, draft_summary, draft_updated_at, draft_updated_by, draft_dirty)
+    values (${slug}, ${input.title}, ${description}, ${input.html}, ${summary}, now(), ${input.updatedBy}, true)
     returning *
   `;
   if (!plan) throw new Error("Failed to insert plan");

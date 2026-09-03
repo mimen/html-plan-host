@@ -47,9 +47,18 @@ function parseArgs(argv) {
   return args;
 }
 
+function decodeEntities(s) {
+  return s
+    .replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"').replace(/&#0?39;/g, "'").replace(/&apos;/g, "'")
+    .replace(/&mdash;/g, "—").replace(/&ndash;/g, "–").replace(/&middot;/g, "·")
+    .replace(/&#(\d+);/g, (_, n) => String.fromCodePoint(Number(n)));
+}
+
 function titleFromHtml(html) {
   const match = html.match(/<title[^>]*>([^<]*)<\/title>/i);
-  return match?.[1]?.trim();
+  const raw = match?.[1]?.trim();
+  return raw ? decodeEntities(raw) : undefined;
 }
 
 function die(message) {

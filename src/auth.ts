@@ -5,21 +5,18 @@ import { config, isAllowedEmail } from "./config.ts";
 import { SESSION_COOKIE, createSessionCookie, verifySessionCookie } from "./session.ts";
 
 const OAUTH_STATE_COOKIE = "hph_oauth_state";
-const GOOGLE_AUTH = "https://accounts.google.com/o/oauth2/v2/auth";
-const GOOGLE_TOKEN = "https://oauth2.googleapis.com/token";
+const HEROKU_AUTHORIZE = "https://id.heroku.com/oauth/authorize";
+const HEROKU_TOKEN = "https://id.heroku.com/oauth/token";
+const HEROKU_ACCOUNT = "https://api.heroku.com/account";
 
-// The redirect URI must match what's registered in Google Cloud Console. We
-// derive it from the request (respecting Heroku's forwarded proto) unless
-// BASE_URL pins it explicitly.
+// Base URL of this deployment (from BASE_URL, else derived from the request
+// respecting Heroku's forwarded proto). Used for publish URLs. The OAuth
+// callback is fixed at Heroku client registration, not passed in the flow.
 export function baseUrl(c: Context): string {
   if (config.baseUrl) return config.baseUrl;
   const proto = c.req.header("x-forwarded-proto") ?? "http";
   const host = c.req.header("host") ?? `localhost:${config.port}`;
   return `${proto}://${host}`;
-}
-
-function redirectUri(c: Context): string {
-  return `${baseUrl(c)}/auth/callback`;
 }
 
 export function startLogin(c: Context, returnTo: string): Response {
@@ -34,27 +31,12 @@ export function startLogin(c: Context, returnTo: string): Response {
   });
 
   const params = new URLSearchParams({
-    client_id: config.google.clientId,
-    redirect_uri: redirectUri(c),
+    client_id: config.herokuOauth.clientId,
     response_type: "code",
-    scope: "openid email profile",
+    scope: "identity",
     state,
-    prompt: "select_account",
   });
-  return c.redirect(`${GOOGLE_AUTH}?${params}`);
-}
-
-interface GoogleIdToken {
-  email?: string;
-  email_verified?: boolean;
-}
-
-function decodeIdToken(idToken: string): GoogleIdToken {
-  // Safe to decode without signature verification: the token came directly from
-  // Google's token endpoint over TLS (per Google's OIDC guidance).
-  const payload = idToken.split(".")[1];
-  if (!payload) throw new Error("Malformed id_token");
-  return JSON.parse(Buffer.from(payload, "base64url").toString()) as GoogleIdToken;
+  return c.redirect(`${HEROKU_AUTHORIZE}?${params}`);
 }
 
 export interface CallbackResult {
@@ -62,6 +44,14 @@ export interface CallbackResult {
   email?: string;
   returnTo: string;
   error?: string;
+}
+
+interface TokenResponse {
+  access_token?: string | { token?: string };
+}
+
+interface HerokuAccount {
+  email?: string;
 }
 
 export async function handleCallback(c: Context): Promise<CallbackResult> {
@@ -76,26 +66,38 @@ export async function handleCallback(c: Context): Promise<CallbackResult> {
   if (!expectedState || state !== expectedState) return { ok: false, returnTo, error: "Bad state" };
   if (!code) return { ok: false, returnTo, error: "Missing code" };
 
-  const res = await fetch(GOOGLE_TOKEN, {
+  // Exchange the code for an access token. Heroku identifies the client by its
+  // secret; the callback URL is fixed at client registration, not sent here.
+  const tokenRes = await fetch(HEROKU_TOKEN, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({
-      code,
-      client_id: config.google.clientId,
-      client_secret: config.google.clientSecret,
-      redirect_uri: redirectUri(c),
       grant_type: "authorization_code",
+      code,
+      client_secret: config.herokuOauth.clientSecret,
     }),
   });
-  if (!res.ok) return { ok: false, returnTo, error: "Token exchange failed" };
+  if (!tokenRes.ok) return { ok: false, returnTo, error: "Token exchange failed" };
 
-  const token = (await res.json()) as { id_token?: string };
-  if (!token.id_token) return { ok: false, returnTo, error: "No id_token" };
+  const token = (await tokenRes.json()) as TokenResponse;
+  // The web flow returns access_token as a string; direct auth returns an
+  // object with a .token field. Handle both.
+  const accessToken =
+    typeof token.access_token === "string" ? token.access_token : token.access_token?.token;
+  if (!accessToken) return { ok: false, returnTo, error: "No access token" };
 
-  const claims = decodeIdToken(token.id_token);
-  const email = claims.email?.toLowerCase();
-  if (!email || claims.email_verified !== true) return { ok: false, returnTo, error: "Unverified email" };
-  if (!isAllowedEmail(email)) return { ok: false, returnTo, email, error: "Domain not allowed" };
+  const acctRes = await fetch(HEROKU_ACCOUNT, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      Accept: "application/vnd.heroku+json; version=3",
+    },
+  });
+  if (!acctRes.ok) return { ok: false, returnTo, error: "Account lookup failed" };
+
+  const account = (await acctRes.json()) as HerokuAccount;
+  const email = account.email?.toLowerCase();
+  if (!email) return { ok: false, returnTo, error: "No account email" };
+  if (!isAllowedEmail(email)) return { ok: false, returnTo, email, error: "Not allowed" };
 
   setCookie(c, SESSION_COOKIE, createSessionCookie(email), {
     httpOnly: true,
@@ -111,7 +113,7 @@ export function logout(c: Context): void {
   deleteCookie(c, SESSION_COOKIE, { path: "/" });
 }
 
-// Gate for read routes: valid session or bounce to Google login, preserving
+// Gate for read routes: valid session or bounce to Heroku login, preserving
 // the originally requested path. With auth disabled the gate is a passthrough.
 export const requireSession: MiddlewareHandler = async (c, next) => {
   if (!config.authEnabled) {

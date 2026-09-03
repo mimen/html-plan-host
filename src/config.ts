@@ -2,7 +2,7 @@
 // deploy fails loudly instead of erroring on the first request.
 //
 // The service is deployment-agnostic: one codebase, many Heroku apps, each
-// shaped entirely by its config vars. Auth is implicit. If Google OAuth
+// shaped entirely by its config vars. Auth is implicit. If Heroku OAuth
 // credentials are present, sign-in is required; if not, reads are open.
 
 import { themeNames, defaultTheme } from "./themes.ts";
@@ -17,13 +17,13 @@ function optional(name: string, fallback: string): string {
   return process.env[name] || fallback;
 }
 
-const googleClientId = optional("GOOGLE_CLIENT_ID", "");
-const googleClientSecret = optional("GOOGLE_CLIENT_SECRET", "");
-const authEnabled = Boolean(googleClientId && googleClientSecret);
+const herokuOauthId = optional("HEROKU_OAUTH_ID", "");
+const herokuOauthSecret = optional("HEROKU_OAUTH_SECRET", "");
+const authEnabled = Boolean(herokuOauthId && herokuOauthSecret);
 
 // Comma-separated glob patterns matched against a signed-in user's email.
 // Examples: "*.salesforce.com, *.heroku.com" (domain + subdomains),
-// "someone@gmail.com" (one person), "*" (any verified Google account).
+// "someone@heroku.com" (one person), "*" (any authenticated Heroku account).
 const allowedEmails = optional("ALLOWED_EMAILS", "")
   .split(",")
   .map((p) => p.trim().toLowerCase())
@@ -31,8 +31,8 @@ const allowedEmails = optional("ALLOWED_EMAILS", "")
 
 if (authEnabled && allowedEmails.length === 0) {
   throw new Error(
-    'ALLOWED_EMAILS must be set when Google OAuth is configured. ' +
-      'Use patterns like "*.salesforce.com, *.heroku.com", a specific address, or "*" for any verified Google account.',
+    'ALLOWED_EMAILS must be set when Heroku OAuth is configured. ' +
+      'Use patterns like "*.salesforce.com, *.heroku.com", a specific address, or "*" for any authenticated Heroku account.',
   );
 }
 
@@ -50,7 +50,7 @@ export const config = {
   publishToken: required("PUBLISH_TOKEN"),
   theme,
   authEnabled,
-  google: { clientId: googleClientId, clientSecret: googleClientSecret },
+  herokuOauth: { clientId: herokuOauthId, clientSecret: herokuOauthSecret },
   allowedEmails,
   // Empty string means "derive from the incoming request".
   baseUrl: optional("BASE_URL", "").replace(/\/$/, ""),

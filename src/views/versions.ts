@@ -1,4 +1,6 @@
 import type { Plan, PlanVersion } from "../plans.ts";
+import { config } from "../config.ts";
+import { themeCss } from "../themes.ts";
 import { esc, fmtDate, fmtShort, page } from "./layout.ts";
 
 export function versionsPage(plan: Plan, versions: PlanVersion[]): string {
@@ -119,64 +121,57 @@ export function planFramePage(plan: Plan, view: FrameView, rawSrc: string): stri
   <meta name="robots" content="noindex, nofollow">
   <title>${esc(plan.title)}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&family=Inter:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400;6..72,600&display=swap" rel="stylesheet">
   <style>
-    :root {
-      --bar: 0 0% 100%; --fg: 240 10% 3.9%; --muted: 240 3.8% 46.1%;
-      --border: 240 5.9% 90%; --stale: 38 92% 45%; --blue: 217 91% 55%;
-    }
-    @media (prefers-color-scheme: dark) {
-      :root { --bar: 240 6% 10%; --fg: 0 0% 98%; --muted: 240 5% 64.9%;
-        --border: 240 3.7% 15.9%; --stale: 38 92% 60%; --blue: 217 91% 65%; }
-    }
     html, body { margin: 0; height: 100%; }
     body { display: flex; flex-direction: column; }
     .chrome { flex: none; }
     .bar {
       height: 44px; box-sizing: border-box; display: flex; align-items: center; gap: 0.4rem;
-      padding: 0 12px; font: 400 12.5px/1 "Inter", -apple-system, system-ui, sans-serif;
-      letter-spacing: -0.003em; color: hsl(var(--muted));
-      background: hsl(var(--bar)); border-bottom: 1px solid hsl(var(--border));
+      padding: 0 12px; font-weight: 400; font-size: 12.5px; line-height: 1;
+      letter-spacing: -0.003em; color: var(--muted);
+      background: var(--surface); border-bottom: 1px solid var(--border);
     }
     .bar .spacer { flex: 1; }
 
-    .crumb { text-decoration: none; color: hsl(var(--muted)); padding: 0.3rem 0.4rem; border-radius: 6px; }
-    .crumb.home:hover { color: hsl(var(--fg)); background: hsl(var(--fg) / 0.05); }
+    .crumb { text-decoration: none; color: var(--muted); padding: 0.3rem 0.4rem; border-radius: var(--radius-sm); }
+    .crumb.home:hover { color: var(--fg); background: var(--hover-surface); }
     .crumb.sep { padding: 0; opacity: 0.45; }
-    .crumb.title { color: hsl(var(--fg)); font-weight: 600; font-size: 13px; padding-left: 0.15rem; }
+    .crumb.title { color: var(--fg); font-weight: 600; font-size: 13px; padding-left: 0.15rem; }
 
     .pager { display: inline-flex; align-items: center; gap: 0.1rem; }
-    .arrow { text-decoration: none; color: hsl(var(--muted)); font-size: 16px; padding: 0.2rem 0.4rem; border-radius: 6px; }
-    .arrow:hover { color: hsl(var(--fg)); background: hsl(var(--fg) / 0.05); }
+    .arrow { text-decoration: none; color: var(--muted); font-size: 16px; padding: 0.2rem 0.4rem; border-radius: var(--radius-sm); }
+    .arrow:hover { color: var(--fg); background: var(--hover-surface); }
     .arrow.off { opacity: 0.25; }
-    .state { display: inline-flex; align-items: center; gap: 0.4rem; color: hsl(var(--fg)); font-weight: 500; padding: 0 0.35rem; }
-    .state .sub { color: hsl(var(--muted)); font-weight: 400; }
-    .ts { color: hsl(var(--muted)); font-weight: 400; margin: 0 0.2rem 0 0.1rem; }
-    .dot { width: 7px; height: 7px; border-radius: 50%; background: hsl(var(--muted)); }
-    .dot.amber { background: hsl(var(--stale)); }
-    .dot.blue { background: hsl(var(--blue)); }
+    .state { display: inline-flex; align-items: center; gap: 0.4rem; color: var(--fg); font-weight: 500; padding: 0 0.35rem; }
+    .state .sub { color: var(--muted); font-weight: 400; }
+    .ts { color: var(--muted); font-weight: 400; margin: 0 0.2rem 0 0.1rem; }
+    .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); }
+    .dot.amber { background: var(--stale); }
+    .dot.blue { background: var(--accent); }
 
     .btn {
       display: inline-flex; align-items: center; gap: 0.35rem; text-decoration: none;
-      font: 500 12.5px/1 "Inter", -apple-system, system-ui, sans-serif; cursor: pointer;
-      padding: 0.4rem 0.62rem; border-radius: 7px; border: 1px solid transparent; color: hsl(var(--muted));
+      font-weight: 500; font-size: 12.5px; line-height: 1; cursor: pointer;
+      padding: 0.4rem 0.62rem; border-radius: var(--radius-sm); border: 1px solid transparent; color: var(--muted);
     }
-    .btn.ghost:hover { color: hsl(var(--fg)); background: hsl(var(--fg) / 0.05); }
-    .btn.accent { color: hsl(var(--blue)); background: hsl(var(--blue) / 0.1); }
-    .btn.accent:hover { background: hsl(var(--blue) / 0.18); }
-    .btn.primary { color: hsl(var(--bar)); background: hsl(var(--fg)); font-weight: 600; }
+    .btn.ghost:hover { color: var(--fg); background: var(--hover-surface); }
+    .btn.accent { color: var(--accent); background: var(--accent-soft); }
+    .btn.accent:hover { background: var(--accent-soft); }
+    .btn.primary { color: var(--primary-fg); background: var(--primary); font-weight: 600; }
     .btn.primary:hover { opacity: 0.9; }
 
     .subbar {
       display: flex; align-items: baseline; gap: 0.5rem; padding: 7px 14px;
-      font: 400 12px/1.45 "Inter", -apple-system, system-ui, sans-serif;
-      background: hsl(var(--bar)); border-bottom: 1px solid hsl(var(--border));
+      font-weight: 400; font-size: 12px; line-height: 1.45;
+      background: var(--surface); border-bottom: 1px solid var(--border);
     }
-    .subbar .lead { font-weight: 600; color: hsl(var(--fg)); white-space: nowrap; }
-    .subbar .txt { color: hsl(var(--muted)); }
+    .subbar .lead { font-weight: 600; color: var(--fg); white-space: nowrap; }
+    .subbar .txt { color: var(--muted); }
 
-    iframe { flex: 1 1 auto; width: 100%; border: 0; display: block; background: #fff; }
+    iframe { flex: 1 1 auto; width: 100%; border: 0; display: block; background: var(--iframe-bg); }
   </style>
+  <style>${themeCss(config.theme)}</style>
 </head>
 <body>
   <header class="chrome">

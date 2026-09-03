@@ -5,6 +5,8 @@
 // shaped entirely by its config vars. Auth is implicit. If Google OAuth
 // credentials are present, sign-in is required; if not, reads are open.
 
+import { themeNames, defaultTheme } from "./themes.ts";
+
 function required(name: string): string {
   const value = process.env[name];
   if (!value) throw new Error(`Missing required env var: ${name}`);
@@ -34,11 +36,19 @@ if (authEnabled && allowedEmails.length === 0) {
   );
 }
 
+const theme = optional("THEME", defaultTheme).trim().toLowerCase();
+if (!themeNames.includes(theme)) {
+  throw new Error(
+    `Invalid THEME "${theme}". Valid themes: ${themeNames.join(", ")}`,
+  );
+}
+
 export const config = {
   port: Number(optional("PORT", "3000")),
   databaseUrl: required("DATABASE_URL"),
   sessionSecret: required("SESSION_SECRET"),
   publishToken: required("PUBLISH_TOKEN"),
+  theme,
   authEnabled,
   google: { clientId: googleClientId, clientSecret: googleClientSecret },
   allowedEmails,

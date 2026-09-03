@@ -41,9 +41,10 @@ in this plugin, see Deliver.
 - Numbered sections, each ending with its own **Sources** footer listing the
   repos, PRs, files, and threads that section drew on. Per-section citations,
   not one list buried at the bottom.
-- A deliberate engineering-ops aesthetic driven by theme tokens in `:root`:
-  near-black background, a distinctive heading and monospace typeface, one
-  accent color plus green/amber/red for state.
+- A theme from `references/plan-themes.md` drives the palette and type
+  (`:root` tokens plus fonts); the default is Engineering. Keep the layout
+  space-efficient, not floaty: tight vertical rhythm, compact cards, ~68-72ch
+  measure. Follow the density rule in that file.
 - A footer with a visible last-updated date and the full source list.
 
 ## House conventions the composed skills do not cover

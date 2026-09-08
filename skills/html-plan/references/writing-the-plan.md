@@ -48,8 +48,6 @@ The recognizable failure, the thing this section exists to prevent, is a page of
 - read-only: no forms, approval buttons, or feedback controls;
 - nothing hidden: no `<details>`, accordions, tabs, or any other control that puts page content behind an interaction;
 - include the absolute artifact path and current status;
-- include `<meta http-equiv="refresh" content="30">` as the non-Cmux refresh fallback;
-- preserve scroll position across local refreshes with a small inline `sessionStorage` script; wrap every storage read and write in `try/catch` so the hosted sandbox renders correctly when storage is unavailable;
 - use local file links with absolute paths where useful, and open links outside the plan with `target="_blank" rel="noopener"` so the dedicated plan surface remains addressable;
 - before approval, label the plan as awaiting implementation authorization;
 - after approval, the plan freezes; see the gate section of the skill body;

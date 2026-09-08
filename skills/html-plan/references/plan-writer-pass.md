@@ -14,6 +14,6 @@ Skip the delegation when the plan is short enough that a second pass would not c
 
 If Fable is unavailable, do the pass yourself, rereading the plan as someone who was not in the conversation. Do not retry automatically or silently substitute another model.
 
-When it returns, confirm the required behaviors survived — read-only, the refresh meta tag, scroll preservation, the absolute artifact path, and the pre-approval labeling — then refresh the surface.
+When it returns, confirm the plan remains read-only and includes the absolute artifact path and pre-approval labeling. Then refresh the surface.
 
 Completion criterion: the plan the user is asked to approve has had a presentation pass, and its substance is identical to what was settled in chat.

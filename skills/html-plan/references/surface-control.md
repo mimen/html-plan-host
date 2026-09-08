@@ -16,6 +16,6 @@ After every material update:
 bun "<installed-html-plan-skill>/scripts/html-plan.ts" refresh --file "<absolute-plan-path>"
 ```
 
-`refresh` resolves the marked plan surface across Cmux workspaces, returns it to the plan URL after link navigation, closes stale duplicate surfaces, and reloads the kept surface in place. If no marked or matching surface exists, the pane is treated as closed and stays closed; file updates continue and `/html-plan` reopens it later. Outside Cmux, the page's timed refresh is the fallback.
+`refresh` resolves the marked plan surface across Cmux workspaces, returns it to the plan URL after link navigation, closes stale duplicate surfaces, and reloads the kept surface in place. If no marked or matching surface exists, the pane is treated as closed and stays closed; file updates continue and `/html-plan` reopens it later.
 
 Completion criterion: the plan is current; opening or refreshing created no duplicate pane and did not move focus away from the invoking session.

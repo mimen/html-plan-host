@@ -1,0 +1,21 @@
+#!/usr/bin/env python3
+import os
+from pathlib import Path
+import shlex
+import sys
+
+home = Path.home()
+environment = dict(os.environ)
+environment['PATH'] = f'{home}/.local/bin:/usr/local/bin:' + environment.get('PATH', '')
+environment['OP_LOAD_DESKTOP_APP_SETTINGS'] = 'false'
+if not environment.get('OP_SERVICE_ACCOUNT_TOKEN'):
+    account = home / '.config/op/service-account.env'
+    if not account.is_file():
+        raise SystemExit('VM service-account environment is missing; restore credential access first')
+    values = dict(part.split('=', 1) for part in shlex.split(account.read_text()) if '=' in part)
+    token = values.get('OP_SERVICE_ACCOUNT_TOKEN')
+    if not token:
+        raise SystemExit('VM service-account environment has no token')
+    environment['OP_SERVICE_ACCOUNT_TOKEN'] = token
+script = Path(__file__).resolve().with_name('html-plan.mjs')
+os.execvpe('bun', ['bun', str(script), *sys.argv[1:]], environment)

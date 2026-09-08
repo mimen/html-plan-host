@@ -1,0 +1,42 @@
+#!/usr/bin/env python3
+import argparse
+import ipaddress
+import json
+import os
+from pathlib import Path
+import subprocess
+from urllib.parse import urlparse
+
+parser = argparse.ArgumentParser(description='Wire a persistent Bot VM package to a private plan host.')
+parser.add_argument('--url', required=True)
+parser.add_argument('--tailnet-ip', required=True)
+parser.add_argument('--token-ref', required=True)
+args = parser.parse_args()
+url = args.url.rstrip('/')
+endpoint = urlparse(url)
+address = ipaddress.ip_address(args.tailnet_ip)
+if endpoint.scheme != 'https' or not endpoint.hostname or not endpoint.hostname.endswith('.ts.net'):
+    parser.error('Expected a private Tailscale HTTPS URL')
+if address not in ipaddress.ip_network('100.64.0.0/10') or not args.token_ref.startswith('op://'):
+    parser.error('Expected a tailnet IPv4 address and an op:// token reference')
+home = Path.home()
+config = home / '.config/html-plan-host/config.json'
+settings = {'url': url, 'tokenRef': args.token_ref}
+if config.is_symlink() or (config.exists() and json.loads(config.read_text()) != settings):
+    raise SystemExit('Existing plan host configuration has another owner or endpoint')
+account = home / '.config/op'
+if not account.is_dir() or account.stat().st_uid != os.getuid():
+    raise SystemExit('VM 1Password configuration is missing or owned by another user')
+account.chmod(0o700)
+hosts = Path('/etc/hosts').read_text()
+matching = [line.split('#', 1)[0].split() for line in hosts.splitlines()]
+matching = [parts for parts in matching if endpoint.hostname in parts[1:]]
+if any(parts[0] != str(address) for parts in matching):
+    raise SystemExit('Existing hosts entry disagrees with the selected tailnet address')
+if not matching:
+    subprocess.run(['sudo', '-n', 'tee', '-a', '/etc/hosts'], input=f'\n{address} {endpoint.hostname}\n', text=True, stdout=subprocess.DEVNULL, check=True)
+config.parent.mkdir(parents=True, exist_ok=True)
+if not config.exists():
+    with config.open('x') as output:
+        output.write(json.dumps(settings, indent=2) + '\n')
+print('Private DNS mapping and nonsecret Bot publishing configuration installed')

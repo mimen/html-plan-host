@@ -65,6 +65,14 @@ The CLI reads that reference through `op` per invocation. Flags and `PLAN_HOST_U
 
 Plan sources remain in their projects. Agents push changes to drafts and report the draft URL; the user publishes numbered versions in the browser. Drafts are not a separate privacy boundary. For a new plan with no published version, its durable URL redirects to its draft.
 
+## Grok Bot VM
+
+Keep the repo package under `/workspace/repos/html-plan-host`, which survives VM refreshes. Read the packaged skills there and use `bin/html-plan-bot` in place of `html-plan`. That wrapper adds the existing local binary directory to PATH and reads the existing VM service-account environment without evaluating shell code. It never copies the publishing token into a file.
+
+Run `python3 bin/setup-bot --url <private-url> --tailnet-ip <mini-tailnet-ip> --token-ref <op-reference>` after a refresh. It tightens the existing 1Password directory permissions and adds only the configured Mini hostname to `/etc/hosts`, preserving HTTPS certificate verification. This avoids the VM's public DNS returning Funnel addresses for a private Serve endpoint. Existing conflicting host or client settings stop setup. The command does not configure Tailscale itself or expose any public port.
+
+The VM must already have Bun, `~/.local/bin/op`, its own `~/.config/op/service-account.env`, and a working private route to the Mini. A missing or revoked VM credential is a separate recovery task, not permission to copy another machine's token. Bot charters reach these skills through their shared preamble; native skill-catalog installation is not required.
+
 ## Work Heroku instance
 
 The existing [Heroku deployment instructions](README.md#deploy-to-heroku-container) remain separate. The Mini command never runs Heroku commands, imports work data, or modifies work credentials. GitHub has an active `kolkrabbi.heroku.com` webhook and successful `milad-plans` deployments following main commits. Personal changes stay on the `personal-mini` branch to avoid triggering a work deployment. Do not merge that branch to main without approval to update the work instance.

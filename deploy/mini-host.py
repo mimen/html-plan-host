@@ -144,6 +144,7 @@ def expose():
 
 
 if __name__ == '__main__':
+    os.environ['PATH'] = str(HOME / '.bun/bin') + ':/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin'
     os.umask(0o077)
     command = sys.argv[1]
     if command == 'activate':

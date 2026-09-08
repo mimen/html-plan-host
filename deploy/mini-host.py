@@ -26,6 +26,7 @@ def load_job(label, arguments, restart=False):
     target = HOME / 'Library/LaunchAgents' / (label + '.plist')
     config = {'Label': label, 'ProgramArguments': [str(a) for a in arguments],
               'RunAtLoad': True, 'KeepAlive': True, 'ThrottleInterval': 15,
+              'EnvironmentVariables': {'LC_ALL': 'C', 'LANG': 'C'},
               'StandardOutPath': str(DATA / (label + '.log')),
               'StandardErrorPath': str(DATA / (label + '.error.log'))}
     if target.exists():

@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Personal service for hosting versioned HTML plans behind Google SSO with durable URLs.",
+  "description": "Versioned HTML plans with durable URLs and configurable access.",
   "bin": {
     "html-plan": "bin/html-plan.mjs"
   },

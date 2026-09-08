@@ -62,15 +62,25 @@ in this plugin, see Deliver.
   than editing quietly. The doc is a living record.
 - **Convey state by shape or label too, not color alone.**
 
+## Task guides
+
+| File | Read when |
+| --- | --- |
+| [`references/implementation-plan.md`](references/implementation-plan.md) | Creating or maintaining a semantically major implementation plan. It owns project-safe placement, local helpers, the persistent view, explicit approval, freeze, and the final shipped record. |
+
+Implementation plans use that task-specific guide. Report and reference authoring
+continue to use the house structure and composed skills above.
+
 ## Deliver
 
-1. Write the file to a descriptive path, `<topic>-<kind>.html`.
+1. Write the file to a descriptive path, `<topic>-<kind>.html`, under its project.
 2. Run the secret grep gate (from html-research-reports, or its vendored copy
    `references/html-research-reports/SKILL.md`). It must exit clean before sharing.
-3. Publish it with **html-plan-push** (prefer the local skill; it ships in this
-   plugin). Push the file as the plan's draft and report the returned draft URL.
-   Publishing a shareable version is the human's action in the web UI, do not
-   publish on their behalf.
+3. Publish it with **html-plan-push**. Prefer the installed skill. If that name is
+   unavailable, read the sibling [`html-plan-push` skill](../html-plan-push/SKILL.md)
+   and follow it directly. Do not invoke `html-plan` again through a local adapter.
+   Push the file as the draft and report the returned draft URL. Publishing a
+   numbered version is the human's action in the web UI.
 4. Optionally open it locally to review the rendered page: inside cmux, run
    `cmux browser open-split "file://<absolute-path>" --focus true`; otherwise
    `open <absolute-path>`. Do not use `cmux open <path>`, which shows raw markup.

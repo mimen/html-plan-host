@@ -1,0 +1,58 @@
+#!/usr/bin/env python3
+import argparse
+import json
+from pathlib import Path
+from urllib.parse import urlparse
+
+parser = argparse.ArgumentParser(description='Install the released CLI, nonsecret host defaults, and repo skills for local agents.')
+parser.add_argument('--url', required=True)
+parser.add_argument('--token-ref', required=True)
+args = parser.parse_args()
+url = args.url.rstrip('/')
+if urlparse(url).scheme != 'https' or not args.token_ref.startswith('op://'):
+    parser.error('Expected an HTTPS URL and an op:// token reference')
+source = Path(__file__).resolve().parent.parent
+if not (source / '.release-revision').is_file():
+    raise SystemExit('Install from an immutable release with .release-revision, not a worktree')
+home = Path.home()
+current = home / '.local/share/html-plan-host/agent-current'
+config = home / '.config/html-plan-host/config.json'
+launcher = home / '.local/bin/html-plan'
+settings = {'url': url, 'tokenRef': args.token_ref}
+launcher_text = '#!/bin/sh\nexport PATH="$HOME/.bun/bin:/opt/homebrew/bin:$PATH"\nexec bun "$HOME/.local/share/html-plan-host/agent-current/bin/html-plan.mjs" "$@"\n'
+links = {current: source}
+for root in [home / '.codex/skills', home / '.agents/skills']:
+    for skill in ['html-plan', 'html-plan-push']:
+        links[root / skill] = current / 'skills' / skill
+for link, destination in links.items():
+    if link.is_symlink():
+        if link == current:
+            if not (link.resolve() / '.release-revision').is_file():
+                raise SystemExit(f'Unrecognized existing package: {link}')
+        elif link.readlink() != destination:
+            raise SystemExit(f'Existing skill has another owner: {link}')
+    elif link.exists():
+        raise SystemExit(f'Refusing to replace existing path: {link}')
+if config.is_symlink() or launcher.is_symlink():
+    raise SystemExit('Client config and launcher must be regular files, not symlinks')
+if config.exists() and (not config.is_file() or json.loads(config.read_text()) != settings):
+    raise SystemExit(f'Existing client config differs: {config}')
+if launcher.exists() and (not launcher.is_file() or launcher.read_text() != launcher_text):
+    raise SystemExit(f'Existing CLI has another owner: {launcher}')
+for link, destination in links.items():
+    link.parent.mkdir(parents=True, exist_ok=True)
+    if link.is_symlink():
+        link.unlink()
+    link.symlink_to(destination)
+config.parent.mkdir(parents=True, exist_ok=True)
+if not config.exists():
+    with config.open('x') as output:
+        output.write(json.dumps(settings, indent=2) + '\n')
+launcher.parent.mkdir(parents=True, exist_ok=True)
+if not launcher.exists():
+    with launcher.open('x') as output:
+        output.write(launcher_text)
+    launcher.chmod(0o755)
+print(json.dumps({'revision': (source / '.release-revision').read_text().strip(),
+                  'cli': str(launcher), 'config': str(config),
+                  'skills': [str(link) for link in links if link != current]}, indent=2))

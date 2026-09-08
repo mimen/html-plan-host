@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import type { Context } from "hono";
-import { requireSession } from "../auth.ts";
+import { requireBrowserPublish, requireSession } from "../auth.ts";
 import {
   getLatestPublishedVersion,
   getPlanBySlug,
@@ -18,8 +18,11 @@ export const planRoutes = new Hono<Env>();
 
 planRoutes.use("*", requireSession);
 
-function serveHtml(c: Context, html: string) {
-  return c.body(html, 200, { "Content-Type": "text/html; charset=utf-8" });
+function serveHtml(c: Context, html: string): Response {
+  return c.body(html, 200, {
+    "Content-Type": "text/html; charset=utf-8",
+    "Content-Security-Policy": "sandbox allow-scripts",
+  });
 }
 
 const isRaw = (c: Context) => c.req.query("raw") !== undefined;
@@ -79,9 +82,8 @@ planRoutes.get("/p/:slug/draft", async (c) => {
   );
 });
 
-// Human-only. Under requireSession, so a token holder with no browser session
-// is bounced to login once SSO is on. Snapshots the draft as the next version.
-planRoutes.post("/p/:slug/publish", async (c) => {
+// Session-gated with OAuth, otherwise reachable by anyone with network access.
+planRoutes.post("/p/:slug/publish", requireBrowserPublish, async (c) => {
   const plan = await getPlanBySlug(c.req.param("slug"));
   if (!plan) return c.notFound();
   await publishDraft(plan.id, c.get("email") || "you");

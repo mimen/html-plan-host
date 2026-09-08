@@ -43,9 +43,22 @@ if (!themeNames.includes(theme)) {
   );
 }
 
+const isProduction = process.env.NODE_ENV === "production" || Boolean(process.env.DYNO);
+const databaseUrl = required("DATABASE_URL");
+const databaseSsl = optional("DATABASE_SSL", "");
+if (databaseSsl !== "" && databaseSsl !== "disable" && databaseSsl !== "require") {
+  throw new Error('DATABASE_SSL must be "disable" or "require" when set.');
+}
+const useSsl = databaseSsl === ""
+  ? isProduction || /sslmode=require/.test(databaseUrl)
+  : databaseSsl === "require";
+
 export const config = {
+  host: optional("HOST", "0.0.0.0"),
   port: Number(optional("PORT", "3000")),
-  databaseUrl: required("DATABASE_URL"),
+  appRevision: optional("APP_REVISION", "unknown"),
+  databaseUrl,
+  databaseSsl: useSsl ? { rejectUnauthorized: false } : false,
   sessionSecret: required("SESSION_SECRET"),
   publishToken: required("PUBLISH_TOKEN"),
   theme,
@@ -54,7 +67,7 @@ export const config = {
   allowedEmails,
   // Empty string means "derive from the incoming request".
   baseUrl: optional("BASE_URL", "").replace(/\/$/, ""),
-  isProduction: process.env.NODE_ENV === "production" || Boolean(process.env.DYNO),
+  isProduction,
 } as const;
 
 function globToRegExp(glob: string): RegExp {

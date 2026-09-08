@@ -113,6 +113,16 @@ export function logout(c: Context): void {
   deleteCookie(c, SESSION_COOKIE, { path: "/" });
 }
 
+// Origin is a browser CSRF boundary, not proof that an HTTP client is human.
+export const requireBrowserPublish: MiddlewareHandler = async (c, next) => {
+  if (c.req.raw.headers.has("Authorization")) return c.text("Forbidden", 403);
+  const origin = c.req.header("Origin");
+  if (!origin || origin === "null" || origin !== new URL(baseUrl(c)).origin) {
+    return c.text("Forbidden", 403);
+  }
+  await next();
+};
+
 // Gate for read routes: valid session or bounce to Heroku login, preserving
 // the originally requested path. With auth disabled the gate is a passthrough.
 export const requireSession: MiddlewareHandler = async (c, next) => {

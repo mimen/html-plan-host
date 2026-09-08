@@ -11,12 +11,19 @@
 //   --url    PLAN_HOST_URL     base URL, e.g. https://milad-plans.herokuapp.com
 //   --token  PLAN_HOST_TOKEN   the PUBLISH_TOKEN config var
 
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
+import { homedir } from "node:os";
+import { join } from "node:path";
+import { execFileSync } from "node:child_process";
 
 const USAGE = `html-plan — manage HTML plans on the host service
 
 Usage:
   html-plan push --file <path> [options]
+  html-plan baseline --slug <slug> [--url <url>] [--token <token>]
+
+Defaults: ~/.config/html-plan-host/config.json with url and tokenRef (op://...).
+Explicit flags and environment override the file. Tokens are read at runtime.
 
 push options:
   --file <path>          HTML file to upload (required)
@@ -66,15 +73,52 @@ function die(message) {
   process.exit(1);
 }
 
+function connection(args) {
+  const file = process.env.PLAN_HOST_CONFIG || join(homedir(), ".config/html-plan-host/config.json");
+  let defaults = {};
+  if (existsSync(file)) {
+    try {
+      defaults = JSON.parse(readFileSync(file, "utf8"));
+    } catch {
+      die(`invalid configuration: ${file}`);
+    }
+    if (!defaults || typeof defaults !== "object" || Array.isArray(defaults)) die("configuration must be an object");
+  }
+  const configuredUrl = typeof defaults.url === "string" ? defaults.url.replace(/\/$/, "") : "";
+  const selectedUrl = args.url || process.env.PLAN_HOST_URL || configuredUrl;
+  if (typeof selectedUrl !== "string" || !selectedUrl) die("service URL required (--url, PLAN_HOST_URL, or config file)");
+  const baseUrl = selectedUrl.replace(/\/$/, "");
+  const url = new URL(baseUrl);
+  if (url.protocol !== "https:" && !(url.protocol === "http:" && ["127.0.0.1", "localhost", "[::1]"].includes(url.hostname))) {
+    die("service URL must use HTTPS (HTTP is allowed only on loopback)");
+  }
+  let token = args.token || process.env.PLAN_HOST_TOKEN;
+  if (!token && baseUrl === configuredUrl && typeof defaults.tokenRef === "string") {
+    if (!defaults.tokenRef.startsWith("op://")) die("tokenRef must be a 1Password secret reference");
+    try {
+      token = execFileSync("op", ["read", defaults.tokenRef], { encoding: "utf8", timeout: 20000, stdio: ["ignore", "pipe", "pipe"] }).trim();
+    } catch {
+      die("1Password token read failed; check service-account access and op on PATH");
+    }
+  }
+  if (typeof token !== "string" || !token) die("publish token required for the selected host; refusing to reuse another host's credential");
+  return { baseUrl, token };
+}
+
+async function baseline(args) {
+  if (typeof args.slug !== "string") die("--slug is required");
+  const { baseUrl, token } = connection(args);
+  const res = await fetch(`${baseUrl}/api/plans/${encodeURIComponent(args.slug)}`, {
+    headers: { Authorization: `Bearer ${token}` }, redirect: "error",
+  });
+  if (!res.ok) die(`baseline failed (${res.status})`);
+  console.log(JSON.stringify(await res.json(), null, 2));
+}
+
 async function push(args) {
   const file = args.file;
   if (!file) die("--file <path> is required");
-
-  const baseUrl = (args.url || process.env.PLAN_HOST_URL || "").replace(/\/$/, "");
-  if (!baseUrl) die("service URL required (--url or PLAN_HOST_URL)");
-
-  const token = args.token || process.env.PLAN_HOST_TOKEN;
-  if (!token) die("publish token required (--token or PLAN_HOST_TOKEN)");
+  const { baseUrl, token } = connection(args);
 
   let html;
   try {
@@ -91,6 +135,7 @@ async function push(args) {
 
   const res = await fetch(`${baseUrl}/api/plans`, {
     method: "POST",
+    redirect: "error",
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
@@ -125,6 +170,8 @@ if (!command || command === "help" || command === "--help" || command === "-h") 
 
 if (command === "push") {
   await push(parseArgs(rest));
+} else if (command === "baseline") {
+  await baseline(parseArgs(rest));
 } else {
   die(`unknown command "${command}". Run "html-plan --help".`);
 }

@@ -1,0 +1,124 @@
+#!/usr/bin/env python3
+import io
+import json
+import os
+from pathlib import Path
+import re
+import shlex
+import subprocess
+import sys
+import tarfile
+import urllib.request
+
+REPO = Path(__file__).resolve().parent.parent
+HOST = os.environ.get('PLAN_MINI_SSH', 'macmini')
+SSH = ['ssh', '-o', 'ConnectTimeout=5', '-o', 'BatchMode=yes', HOST]
+
+
+def remote(command, **kwargs):
+    return subprocess.run(SSH + [command], check=True, **kwargs)
+
+
+def home():
+    return remote('printf "%s" "$HOME"', capture_output=True, text=True).stdout
+
+
+def deploy(revision):
+    sha = subprocess.check_output(['git', '-C', str(REPO), 'rev-parse', '--verify', revision + '^{commit}'], text=True).strip()
+    if not re.fullmatch('[0-9a-f]{40}', sha):
+        raise SystemExit('Invalid source revision')
+    if subprocess.check_output(['git', '-C', str(REPO), 'status', '--porcelain']).strip():
+        raise SystemExit('Commit all task changes before deploying')
+    destination = home() + '/Programming/Deployments/html-plan-host'
+    release = destination + '/releases/' + sha
+    archive = subprocess.check_output(['git', '-C', str(REPO), 'archive', sha])
+    with io.BytesIO(archive) as buffer:
+        with tarfile.open(fileobj=buffer, mode='a') as bundle:
+            payload = (sha + '\n').encode()
+            marker = tarfile.TarInfo('.release-revision')
+            marker.size = len(payload)
+            bundle.addfile(marker, io.BytesIO(payload))
+        archive = buffer.getvalue()
+    q = shlex.quote
+    prepare = f'''set -e
+if test -d {q(release)}; then
+  test "$(<{q(release + '/.release-revision')})" = {q(sha)}
+else
+  mkdir -p {q(destination + '/releases')}
+  stage=$(mktemp -d {q(destination + '/releases/.stage.XXXXXX')})
+  trap 'rm -rf "$stage"' EXIT
+  tar -xf - -C "$stage"
+  test "$(<"$stage/.release-revision")" = {q(sha)}
+  /usr/bin/python3 -c 'import os,sys; os.rename(sys.argv[1],sys.argv[2])' "$stage" {q(release)}
+fi'''
+    remote(prepare, input=archive)
+    remote(f'/usr/bin/python3 {q(release + "/deploy/mini-host.py")} activate {q(sha)}')
+    verify(sha)
+
+
+def base_url():
+    raw = remote('/opt/homebrew/bin/tailscale status --json', capture_output=True, text=True)
+    dns = json.loads(raw.stdout)['Self']['DNSName'].rstrip('.')
+    return 'https://' + dns + ':8490'
+
+
+def verify(expected=None):
+    url = base_url()
+    live = json.load(urllib.request.urlopen(url + '/version', timeout=15))
+    if live.get('service') != 'html-plan-host' or not live.get('revision'):
+        raise SystemExit('Missing release identity')
+    if expected and live['revision'] != expected:
+        raise SystemExit('Wrong release is live')
+    if urllib.request.urlopen(url + '/healthz', timeout=15).read() != b'ok':
+        raise SystemExit('Health check failed')
+    status = json.loads(remote('/opt/homebrew/bin/tailscale serve status --json', capture_output=True, text=True).stdout)
+    if any(value for key, value in status.get('AllowFunnel', {}).items() if key.endswith(':8490')):
+        raise SystemExit('Personal port has Funnel enabled')
+    listeners = remote('/usr/sbin/lsof -nP -iTCP:3490 -iTCP:5490 -sTCP:LISTEN', capture_output=True, text=True).stdout
+    for port in ['3490', '5490']:
+        rows = [line for line in listeners.splitlines() if ':' + port + ' ' in line]
+        if not rows or any('127.0.0.1:' + port not in line for line in rows):
+            raise SystemExit('Service is not loopback-only: ' + port)
+    cluster = remote("/opt/homebrew/opt/postgresql@17/bin/psql -h 127.0.0.1 -p 5490 -d postgres -Atc 'SHOW cluster_name'", capture_output=True, text=True).stdout.strip()
+    if cluster != 'html-plan-host:postgres@personal':
+        raise SystemExit('Wrong database owns port 5490')
+    for port, identity in [('3490', 'html-plan-host:server@personal'), ('5490', 'html-plan-host:postgres@personal')]:
+        pids = {line.split()[1] for line in listeners.splitlines()[1:] if ':' + port + ' ' in line}
+        for pid in pids:
+            if not pid.isdigit():
+                raise SystemExit('Invalid listener PID')
+            process = remote('/bin/ps -p ' + pid + ' -o args=', capture_output=True, text=True).stdout
+            if identity not in process:
+                raise SystemExit('Wrong process identity on port ' + port)
+    print(json.dumps({'url': url, **live, 'private': True, 'loopbackOnly': True, 'database': cluster}, indent=2))
+
+
+def backup():
+    root = home() + '/Programming/Deployments/html-plan-host/current'
+    path = remote('/usr/bin/python3 ' + shlex.quote(root + '/deploy/mini-host.py') + ' backup', capture_output=True, text=True).stdout.strip()
+    if not path.startswith(home() + '/.local/share/html-plan-host/backups/') or not path.endswith('.dump'):
+        raise SystemExit('Unexpected backup location')
+    folder = Path.home() / 'Library/Application Support/html-plan-host/backups'
+    folder.mkdir(parents=True, exist_ok=True, mode=0o700)
+    target = folder / Path(path).name
+    with target.open('xb') as output:
+        remote('/bin/cat ' + shlex.quote(path), stdout=output)
+    target.chmod(0o600)
+    print(target)
+
+
+if __name__ == '__main__':
+    os.umask(0o077)
+    command = sys.argv[1] if len(sys.argv) > 1 else 'help'
+    if command == 'deploy':
+        deploy(sys.argv[2] if len(sys.argv) > 2 else 'HEAD')
+    elif command == 'verify':
+        verify(sys.argv[2] if len(sys.argv) > 2 else None)
+    elif command == 'backup':
+        backup()
+    elif command == 'status':
+        root = home() + '/Programming/Deployments/html-plan-host/current'
+        remote('/usr/bin/python3 ' + shlex.quote(root + '/deploy/mini-host.py') + ' status')
+    else:
+        print('Usage: bin/mini deploy [revision] | verify [revision] | status | backup')
+        print('Deploys an immutable committed release to the private Mini instance. No Heroku commands.')

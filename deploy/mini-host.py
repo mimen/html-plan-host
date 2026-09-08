@@ -57,8 +57,7 @@ def database():
         run(PG / 'initdb', '-D', cluster, '--encoding=UTF8', '--locale=C', '--auth-local=trust', '--auth-host=trust')
     elif not (cluster / 'PG_VERSION').exists():
         raise SystemExit(f'Unrecognized database directory: {cluster}')
-    load_job(PG_LABEL, ['/bin/zsh', '-c', 'exec -a html-plan-host:postgres@personal "$@"',
-                        'html-plan-host:postgres@personal', PG / 'postgres', '-D', cluster,
+    load_job(PG_LABEL, [PG / 'postgres', '-D', cluster,
                         '-h', '127.0.0.1', '-p', '5490', '-k', DATA,
                         '-c', 'cluster_name=html-plan-host:postgres@personal'])
     import time
@@ -157,7 +156,11 @@ if __name__ == '__main__':
         backup()
     elif command == 'status':
         for label in [LABEL, PG_LABEL]:
-            run('/bin/launchctl', 'print', DOMAIN + '/' + label)
+            result = run('/bin/launchctl', 'print', DOMAIN + '/' + label, capture_output=True, text=True)
+            print(label)
+            for line in result.stdout.splitlines():
+                if line.strip().startswith(('state =', 'pid =', 'last exit code =', 'runs =')):
+                    print(line.strip())
         run('/opt/homebrew/bin/tailscale', 'serve', 'status')
     else:
         raise SystemExit('Expected activate <revision>, backup, or status')

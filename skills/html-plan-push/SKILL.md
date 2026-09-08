@@ -15,11 +15,15 @@ path only.
 
 ## Push automatically, don't ask
 
-A push writes a **draft**. It is safe, reversible, and not shared with anyone, so
-just do it. Do not ask the user whether to push, or ask them to supply a summary,
-each time you edit a plan. After generating or updating a plan, push it so the
-draft on the site is immediately live, then report the URLs. The only action that
-is ever the human's is Publish (below).
+For an authorized hosted-plan task, push the draft after each material edit and
+report its URL. Compute the summary from the published baseline rather than
+asking the user to write it. Existing instructions about sensitive content and
+external publication still apply.
+
+Drafts have the same read-access gate as published versions. On a private
+Tailscale deployment, anyone permitted to reach the host can read them. On an
+open public deployment, drafts are public. A durable URL with no published
+version redirects to the draft. Push does not mint a numbered version.
 
 ## Draft, never publish
 
@@ -36,14 +40,16 @@ they publish in the browser.
 
 ## Configuration
 
-Read these from the environment (they are set for the agents):
+The CLI uses `~/.config/html-plan-host/config.json` with `url` and a `tokenRef`
+pointing to 1Password. It reads the token at runtime. `PLAN_HOST_CONFIG` can
+select another config file. [Deployment setup](../../DEPLOY.md#agent-publishing)
+covers installation.
 
-- `PLAN_HOST_URL` — the deployment's base URL (e.g. `https://<app>-<suffix>.herokuapp.com`).
-- `PLAN_HOST_TOKEN` — that deployment's `PUBLISH_TOKEN`.
-
-If both are genuinely unset, that's a setup gap, surface it rather than inventing
-values. A person may run more than one deployment (personal and work); these two
-variables are the only difference, so use whichever the environment provides.
+Explicit `--url`/`--token` flags and `PLAN_HOST_URL`/`PLAN_HOST_TOKEN` environment
+variables override the defaults. A different host does not inherit the personal
+token reference. Use a matched URL and token for work, and keep secret values out
+of arguments, logs, and plan files. A missing configuration or an unreachable
+private host is a setup gap, not a reason to publish elsewhere.
 
 ## Summary: cumulative since the last published version
 
@@ -52,7 +58,7 @@ version**, not just your most recent edit. Before pushing an update, fetch the
 published baseline with the token:
 
 ```sh
-curl -sS "$PLAN_HOST_URL/api/plans/<slug>" -H "Authorization: Bearer $PLAN_HOST_TOKEN"
+html-plan baseline --slug <slug>
 # -> { latestPublishedVersion, publishedTitle, publishedHtml, draftSummary, dirty }
 ```
 

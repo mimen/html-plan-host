@@ -14,7 +14,9 @@ timestamped version you can browse and reopen.
 
 ## Stack
 
-Bun + [Hono](https://hono.dev) + Postgres. Deployed to Heroku as a container.
+Bun + [Hono](https://hono.dev) + Postgres. Runs on Heroku as a container or on a private Mac Mini behind Tailscale. [DEPLOY.md](DEPLOY.md) owns the Mini deployment, rollback, backup, and agent installation commands.
+
+The `personal-mini` branch is the personal release line. Keep it separate from `main`, which has an active Heroku deployment webhook.
 
 ## Local development
 
@@ -115,7 +117,7 @@ it on your PATH:
 bun link
 ```
 
-Then:
+For personal defaults, use the nonsecret config and runtime 1Password reference described in [Agent publishing](DEPLOY.md#agent-publishing). To select another deployment explicitly:
 
 ```sh
 export PLAN_HOST_URL="https://your-app-name-a1b2c3.herokuapp.com"   # heroku apps:info -a <app>

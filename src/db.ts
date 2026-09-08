@@ -1,12 +1,9 @@
 import postgres from "postgres";
 import { config } from "./config.ts";
 
-// Heroku Postgres presents a self-signed cert, so we relax verification in
-// production. Locally (plain postgres:// on localhost) SSL is disabled.
-const useSsl = config.isProduction || /sslmode=require/.test(config.databaseUrl);
-
+// Preserve Heroku's self-signed certificate support unless SSL is disabled.
 export const sql = postgres(config.databaseUrl, {
-  ssl: useSsl ? { rejectUnauthorized: false } : false,
+  ssl: config.databaseSsl,
   max: 10,
   onnotice: () => {},
 });

@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Personal plan host</title>
+<style>
+:root { color-scheme: light dark; font-family: system-ui, sans-serif; }
+body { margin: 0; padding: 8vh 6vw; background: light-dark(#f7f6f2,#17191c); color: light-dark(#242b35,#e8e9ec); }
+main { max-width: 44rem; margin: auto; }
+p,li { line-height: 1.65; }
+small { color: light-dark(#53616d,#aab7c4); }
+h1 { font-size: clamp(2rem,5vw,3.4rem); line-height: 1.1; letter-spacing: -.04em; }
+code { background: light-dark(#e8ecee,#303840); padding: .15rem .35rem; border-radius: .2rem; }
+</style>
+<main>
+<small>DEPLOYMENT CHECK · VERIFICATION FIXTURE</small>
+<h1>Your plans have a home.</h1>
+<p>This draft verifies the personal host's create, update, and readback path. It is not an implementation plan or an approval request.</p>
+<ul>
+<li>Access stays inside the private Tailscale network.</li>
+<li>Agents update drafts at the same URL.</li>
+<li>Only the user decides when to publish a numbered version.</li>
+<li>Implementation approval stays in chat.</li>
+</ul>
+<p id="check">Draft create verified.</p>
+<script>document.documentElement.dataset.rendered = 'yes';</script>
+</main>
+</html>

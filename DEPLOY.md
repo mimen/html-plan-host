@@ -67,7 +67,7 @@ Plan sources remain in their projects. Agents push changes to drafts and report 
 
 ## Grok Bot VM
 
-Keep the repo package under `/workspace/repos/html-plan-host`, which survives VM refreshes. Read the packaged skills there and use `bin/html-plan-bot` in place of `html-plan`. That wrapper adds the existing local binary directory to PATH and reads the existing VM service-account environment without evaluating shell code. It never copies the publishing token into a file.
+Keep the repo package under `/workspace/repos/html-plan-host`, which survives VM refreshes. Read the packaged skills there. Setup exposes `html-plan` through `/usr/local/bin/html-plan`, linked to the package's `bin/html-plan-bot` wrapper. That wrapper adds the existing local binary directory to PATH and reads the existing VM service-account environment without evaluating shell code. It never copies the publishing token into a file.
 
 Run `python3 bin/setup-bot --url <private-url> --tailnet-ip <mini-tailnet-ip> --token-ref <op-reference>` after a refresh. It tightens the existing 1Password directory permissions and adds only the configured Mini hostname to `/etc/hosts`, preserving HTTPS certificate verification. This avoids the VM's public DNS returning Funnel addresses for a private Serve endpoint. Existing conflicting host or client settings stop setup. The command does not configure Tailscale itself or expose any public port.
 

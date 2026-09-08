@@ -24,6 +24,11 @@ config = home / '.config/html-plan-host/config.json'
 settings = {'url': url, 'tokenRef': args.token_ref}
 if config.is_symlink() or (config.exists() and json.loads(config.read_text()) != settings):
     raise SystemExit('Existing plan host configuration has another owner or endpoint')
+command = Path('/usr/local/bin/html-plan')
+wrapper = Path(__file__).resolve().with_name('html-plan-bot')
+if command.exists() or command.is_symlink():
+    if not command.is_symlink() or command.resolve() != wrapper:
+        raise SystemExit('Existing html-plan command has another owner')
 account = home / '.config/op'
 if not account.is_dir() or account.stat().st_uid != os.getuid():
     raise SystemExit('VM 1Password configuration is missing or owned by another user')
@@ -39,4 +44,6 @@ config.parent.mkdir(parents=True, exist_ok=True)
 if not config.exists():
     with config.open('x') as output:
         output.write(json.dumps(settings, indent=2) + '\n')
-print('Private DNS mapping and nonsecret Bot publishing configuration installed')
+if not command.is_symlink():
+    subprocess.run(['sudo', '-n', 'ln', '-s', str(wrapper), str(command)], check=True)
+print('Private DNS mapping, html-plan command, and nonsecret Bot configuration installed')

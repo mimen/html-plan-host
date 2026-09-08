@@ -17,7 +17,7 @@ function temporaryProject(withGit = true): string {
 }
 
 function run(args: readonly string[]): { status: number; stdout: string; stderr: string } {
-  const result = Bun.spawnSync(["bun", SCRIPT, ...args], {
+  const result = Bun.spawnSync([process.execPath, SCRIPT, ...args], {
     stdout: "pipe",
     stderr: "pipe",
   });

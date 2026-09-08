@@ -1,5 +1,5 @@
 ---
-deployment_status: deterministic
+deployment_status: verified
 deployment_production_trigger: explicit bin/mini deploy of a committed revision
 deployment_branch_command: bun run dev with a separate database and port
 deployment_verify_command: bin/mini verify
@@ -71,4 +71,6 @@ The existing [Heroku deployment instructions](README.md#deploy-to-heroku-contain
 
 ## Verification
 
-`bin/mini verify` proves deployment identity and access topology, not all product behavior. A release also needs a real draft create and update through `html-plan`, a readback at the same URL, baseline inspection showing no published version, and browser inspection of the draft. Tests cover the configurable bind address and database TLS, publish request restrictions, and raw HTML sandboxing.
+`bin/mini verify` proves deployment identity and access topology, not all product behavior. A release also needs a real draft create and update through `html-plan`, a readback at the same URL, baseline inspection showing no published version, and browser inspection of the draft. Tests cover the configurable bind address and database TLS, publish request restrictions, raw HTML sandboxing, deployment rollback, and installer overwrite guards.
+
+Setup proof on 2026-09-07: 56 Bun tests, six Python regressions, typecheck, and GitHub CI passed. The M5 created a real draft through its installed CLI; the Mini updated it at the same URL using its own runtime credential lookup. Readback confirmed the update and zero published versions. A headless browser rendered the draft, executed its inline script, and navigated to the versions page with no page errors. A Postgres dump was copied to the M5 and restored into an isolated database; the updated draft and zero-version state survived. The temporary restore database was removed. `bin/mini verify` confirmed private routing, loopback listeners, process identities, and the dedicated cluster name.

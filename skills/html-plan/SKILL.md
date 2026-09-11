@@ -41,11 +41,12 @@ in this plugin, see Deliver.
 - Numbered sections, each ending with its own **Sources** footer listing the
   repos, PRs, files, and threads that section drew on. Per-section citations,
   not one list buried at the bottom.
-- A theme from [`references/plan-themes.md`](references/plan-themes.md) drives
-  the palette and type. Default is **Spec**. Paste that file's font link and CSS
-  block (light `:root` plus `prefers-color-scheme: dark`). Do not hard-code a
-  page-level dark background. Keep the layout space-efficient: tight vertical
-  rhythm, compact cards, ~68-72ch measure. Follow the density rule in that file.
+- [`references/plan-themes.md`](references/plan-themes.md) owns the look and
+  the layout. Paste its font link and CSS, then build on its markup skeleton:
+  the CSS places the sidebar, the prose column, and each section's sources in
+  the right margin. Light `:root` plus `prefers-color-scheme: dark`; do not
+  hard-code a page-level dark background or per-shape SVG fills. Follow the
+  density rule in that file.
 - A footer with a visible last-updated date and the full source list.
 
 ## House conventions the composed skills do not cover

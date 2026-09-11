@@ -84,6 +84,8 @@ nav { grid-column: 1; grid-row: 1 / span 60; position: sticky; top: 32px; align-
 nav a { display: grid; grid-template-columns: 18px 1fr; gap: 6px; padding: 5px 0; font-size: 13px; font-weight: 600; text-decoration: none; color: var(--muted); line-height: 1.3; border-top: 1px solid var(--faint); }
 nav a:first-child { border-top: 0; }
 nav a:hover { color: var(--text); }
+nav a.current { color: var(--text); }
+nav a.current .num { color: var(--text); background: var(--mark); margin-left: -4px; padding: 0 4px; border-radius: 2px; }
 nav .num { font: 500 11px var(--mono); color: var(--accent); }
 
 .head { grid-column: 2 / 4; grid-row: 1; margin-bottom: 40px; }
@@ -236,11 +238,30 @@ footer { grid-column: 2 / 4; margin-top: 24px; padding-top: 16px; border-top: 1p
 
 <footer>Last updated 2026-09-10. Sources: …</footer>
 </div>
+<script>
+const links = [...document.querySelectorAll("nav a[href^='#']")];
+const byId = new Map(links.map((a) => [a.getAttribute("href").slice(1), a]));
+const ids = [...byId.keys()];
+const visible = new Set();
+function mark() {
+  const atEnd = innerHeight + scrollY >= document.documentElement.scrollHeight - 2;
+  const current = atEnd ? ids[ids.length - 1] : ids.find((id) => visible.has(id));
+  for (const [id, a] of byId) a.classList.toggle("current", id === current);
+}
+const observer = new IntersectionObserver((entries) => {
+  for (const e of entries) e.isIntersecting ? visible.add(e.target.id) : visible.delete(e.target.id);
+  mark();
+}, { rootMargin: "-10% 0px -60% 0px" });
+for (const id of ids) { const el = document.getElementById(id); if (el) observer.observe(el); }
+addEventListener("scroll", mark, { passive: true });
+</script>
 </body>
 ```
 
 Rules the CSS assumes:
 
+- Keep the `<script>` at the end of `body`. It marks the contents link for the
+  section in view with `.current`. Every `nav` href must match a section `id`.
 - One `<aside class="sources">` per section, placed last inside the section. It
   lands in the right margin beside that section's first lines.
 - `h2` carries `<span class="n">N</span>` for the section number. The short

@@ -12,6 +12,8 @@ test("plan theme is Margin and follows the OS", () => {
   expect(text).toContain("@media (prefers-color-scheme: dark)");
   expect(text).toContain("## Markup skeleton");
   expect(text).toContain('<aside class="sources">');
+  expect(text).toContain("new IntersectionObserver");
+  expect(text).toContain("nav a.current");
   expect(text).not.toContain("Engineering");
   expect(text).not.toContain("Space Grotesk");
   expect(text).not.toContain("**Spec**");

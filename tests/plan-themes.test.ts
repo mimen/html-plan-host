@@ -7,11 +7,12 @@ const text = readFileSync(
   "utf8",
 );
 
-test("plan themes default to Spec and follow the OS", () => {
-  expect(text).toContain("Default is\n**Spec**");
+test("plan theme is Margin and follows the OS", () => {
+  expect(text).toContain("One theme, **Margin**");
   expect(text).toContain("@media (prefers-color-scheme: dark)");
-  expect(text).toContain("## Reading");
-  expect(text).toContain("## Carbon");
-  expect(text).not.toContain("Default is **Engineering**");
+  expect(text).toContain("## Markup skeleton");
+  expect(text).toContain('<aside class="sources">');
+  expect(text).not.toContain("Engineering");
   expect(text).not.toContain("Space Grotesk");
+  expect(text).not.toContain("**Spec**");
 });

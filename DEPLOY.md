@@ -75,7 +75,7 @@ The VM must already have Bun, `~/.local/bin/op`, its own `~/.config/op/service-a
 
 ## Work Heroku instance
 
-The existing [Heroku deployment instructions](README.md#deploy-to-heroku-container) remain separate. The Mini command never runs Heroku commands, imports work data, or modifies work credentials. GitHub has an active `kolkrabbi.heroku.com` webhook and successful `milad-plans` deployments following main commits. Personal changes stay on the `personal-mini` branch to avoid triggering a work deployment. Do not merge that branch to main without approval to update the work instance.
+The existing [Heroku deployment instructions](README.md#deploy-to-heroku-container) remain the work path. The Mini command never runs Heroku commands, imports work data, or modifies work credentials. GitHub has an active `kolkrabbi.heroku.com` webhook, so commits on `main` deploy to `milad-plans`. Mini-only settings (`HOST=127.0.0.1`, `DATABASE_SSL=disable`, Tailscale Serve) stay off that app. Unset `DATABASE_SSL` plus a Heroku `DYNO` keeps the previous required-SSL default.
 
 ## Verification
 

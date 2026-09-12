@@ -14,9 +14,7 @@ timestamped version you can browse and reopen.
 
 ## Stack
 
-Bun + [Hono](https://hono.dev) + Postgres. Runs on Heroku as a container or on a private Mac Mini behind Tailscale. [DEPLOY.md](DEPLOY.md) owns the Mini deployment, rollback, backup, and agent installation commands.
-
-The `personal-mini` branch is the personal release line. Keep it separate from `main`, which has an active Heroku deployment webhook.
+Bun + [Hono](https://hono.dev) + Postgres. One `main` branch. Heroku is the default deploy (container, auto-deploy from `main`). A private Mac Mini behind Tailscale is optional and is selected only by Mini env and [DEPLOY.md](DEPLOY.md).
 
 ## Local development
 

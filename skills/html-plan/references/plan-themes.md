@@ -1,6 +1,12 @@
-# Plan document theme
+# Plan document theme — Margin
 
-One theme, **Margin**. Paste the font link, the CSS, and build the page on the
+Two plan themes ship with this skill: **Margin** (this file) and **Console**
+([`plan-themes-console.md`](plan-themes-console.md)). Build each document on
+exactly one — don't mix their class systems. Pick **Margin** for a reading-first
+writeup with heavy per-section citation (sources in the right margin); pick
+**Console** for a decision/plan doc with a stat strip, config blocks, and tables.
+
+This file is **Margin**. Paste the font link, the CSS, and build the page on the
 markup skeleton below. The CSS owns the layout: sidebar contents on the left,
 prose in the middle column, per-section sources pulled into the right margin.
 

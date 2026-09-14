@@ -7,8 +7,13 @@ const text = readFileSync(
   "utf8",
 );
 
+const consoleText = readFileSync(
+  join(import.meta.dir, "../skills/html-plan/references/plan-themes-console.md"),
+  "utf8",
+);
+
 test("plan theme is Margin and follows the OS", () => {
-  expect(text).toContain("One theme, **Margin**");
+  expect(text).toContain("This file is **Margin**");
   expect(text).toContain("@media (prefers-color-scheme: dark)");
   expect(text).toContain("## Markup skeleton");
   expect(text).toContain('<aside class="sources">');
@@ -17,4 +22,12 @@ test("plan theme is Margin and follows the OS", () => {
   expect(text).not.toContain("Engineering");
   expect(text).not.toContain("Space Grotesk");
   expect(text).not.toContain("**Spec**");
+});
+
+test("Console theme follows the OS and ships its skeleton", () => {
+  expect(consoleText).toContain("**Console**");
+  expect(consoleText).toContain("@media (prefers-color-scheme: dark)");
+  expect(consoleText).toContain("## Markup skeleton");
+  expect(consoleText).toContain("IntersectionObserver");
+  expect(consoleText).toContain("nav.rail a.current");
 });

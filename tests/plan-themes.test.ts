@@ -31,3 +31,16 @@ test("Console theme follows the OS and ships its skeleton", () => {
   expect(consoleText).toContain("IntersectionObserver");
   expect(consoleText).toContain("nav.rail a.current");
 });
+
+const nocturneText = readFileSync(
+  join(import.meta.dir, "../skills/html-plan/references/plan-themes-nocturne.md"),
+  "utf8",
+);
+
+test("Nocturne theme follows the OS and ships its skeleton", () => {
+  expect(nocturneText).toContain("**Nocturne**");
+  expect(nocturneText).toContain("@media (prefers-color-scheme: dark)");
+  expect(nocturneText).toContain("## Markup skeleton");
+  expect(nocturneText).toContain("IntersectionObserver");
+  expect(nocturneText).toContain("nav.toc a.current");
+});

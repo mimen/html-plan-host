@@ -42,14 +42,16 @@ in this plugin, see Deliver.
   repos, PRs, files, and threads that section drew on. Per-section citations,
   not one list buried at the bottom.
 - [`references/plan-themes.md`](references/plan-themes.md) owns the look and
-  the layout. Two themes ship: **Margin** (editorial — sidebar, prose column,
-  right-margin sources) and **Console**
+  the layout. Three themes ship: **Margin** (editorial — sidebar, prose column,
+  right-margin sources), **Console**
   ([`references/plan-themes-console.md`](references/plan-themes-console.md) — a
-  denser plan/brief look: numbered contents rail, an at-a-glance stat strip, and
-  card panels). Pick one, paste its font link and CSS, then build on its markup
-  skeleton. Light `:root` plus `prefers-color-scheme: dark`; do not hard-code a
-  page-level dark background or per-shape SVG fills. Follow the density rule in
-  that file.
+  denser plan/brief look: numbered rail, stat strip, card panels), and
+  **Nocturne**
+  ([`references/plan-themes-nocturne.md`](references/plan-themes-nocturne.md) — a
+  technical reference look: step ladder, semantic notes, per-section citations).
+  Pick one, paste its font link and CSS, then build on its markup skeleton. Light
+  `:root` plus `prefers-color-scheme: dark`; do not hard-code a page-level dark
+  background or per-shape SVG fills. Follow the density rule in that file.
 - A footer with a visible last-updated date and the full source list.
 
 ## House conventions the composed skills do not cover

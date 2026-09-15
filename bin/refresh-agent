@@ -1,0 +1,203 @@
+#!/usr/bin/env python3
+"""Keep this host's installed agent package on the tip of main.
+
+Every machine pins its own package, so a fixed skill can sit on main
+indefinitely while local agents keep generating plans from the revision
+installed months ago. This compares the installed pin against main and re-runs
+the pinned installer when they differ.
+
+It runs unattended, so there is no recovery here and no default that papers
+over a broken host. An unusable config, a missing package, or an unreachable
+GitHub exits nonzero naming the step that failed.
+"""
+
+import argparse
+import json
+import os
+from pathlib import Path
+import plistlib
+import re
+import shutil
+import subprocess
+import tempfile
+import urllib.request
+
+HOME = Path.home()
+DATA = HOME / '.local/share/html-plan-host'
+CONFIG = HOME / '.config/html-plan-host/config.json'
+CURRENT = DATA / 'agent-current'
+LAUNCH_AGENTS = HOME / 'Library/LaunchAgents'
+HUB_RUN = HOME / 'Programming/Repos/hub/bin/run'
+LABEL = 'com.mimen.html-plan-host.agent-refresh'
+TIP_URL = 'https://api.github.com/repos/mimen/html-plan-host/commits/main'
+PYTHON = '/usr/bin/python3'
+COMMIT = re.compile('[0-9a-f]{40}')
+DOMAIN = 'gui/{}'.format(os.getuid())
+
+
+def run(step, command):
+    done = subprocess.run([str(part) for part in command])
+    if done.returncode:
+        raise SystemExit('{}: {} exited {}'.format(step, command[0], done.returncode))
+
+
+def read_config():
+    try:
+        settings = json.loads(CONFIG.read_text())
+        url, token_ref = settings['url'], settings['tokenRef']
+    except (OSError, ValueError, KeyError, TypeError) as failure:
+        raise SystemExit('config: cannot read url and tokenRef from {} ({}); bootstrap this host first'.format(CONFIG, failure))
+    if not isinstance(url, str) or not isinstance(token_ref, str) or not url or not token_ref:
+        raise SystemExit('config: {} needs nonempty string url and tokenRef; bootstrap this host first'.format(CONFIG))
+    return url, token_ref
+
+
+def installed_revision():
+    marker = CURRENT / '.release-revision'
+    try:
+        revision = marker.read_text().strip()
+    except OSError as failure:
+        raise SystemExit('installed: no package at {} ({}); bootstrap this host first'.format(CURRENT, failure))
+    if not COMMIT.fullmatch(revision):
+        raise SystemExit('installed: {} does not hold a commit sha'.format(marker))
+    return revision
+
+
+def fetch_tip():
+    request = urllib.request.Request(TIP_URL, headers={'User-Agent': 'html-plan-host-refresh',
+                                                       'Accept': 'application/vnd.github.sha'})
+    return urllib.request.urlopen(request, timeout=30).read().decode('utf-8', 'replace').strip()
+
+
+def resolve_tip():
+    try:
+        body = fetch_tip()
+    except OSError as failure:
+        raise SystemExit('resolve: cannot reach {} ({})'.format(TIP_URL, failure))
+    if not COMMIT.fullmatch(body):
+        raise SystemExit('resolve: main did not resolve to a commit sha: ' + body[:200])
+    return body
+
+
+def refresh():
+    url, token_ref = read_config()
+    installed = installed_revision()
+    tip = resolve_tip()
+    if tip == installed:
+        return 'up to date at ' + installed
+    # Run the installer from the package being replaced, so bootstrap-agent and
+    # install-agent pick up their own fixes on the same tick as everything else.
+    installer = CURRENT / 'bin/bootstrap-agent'
+    if not installer.is_file():
+        raise SystemExit('bootstrap: no installer at {}; bootstrap this host first'.format(installer))
+    run('bootstrap', [PYTHON, installer, '--revision', tip, '--url', url, '--token-ref', token_ref])
+    return 'updated {} -> {}'.format(installed, tip)
+
+
+def install(job_id):
+    if not job_id or job_id.startswith('-'):
+        raise SystemExit('install: --job-id must be a hub job id such as mini.launchd.' + LABEL)
+    # The scheduled command goes through the agent-current link rather than this
+    # file's resolved path, which moves to a new package directory on every
+    # upgrade and would leave the job pointing at a stale revision.
+    script = CURRENT / 'bin/refresh-agent'
+    if not script.is_file():
+        raise SystemExit('install: no refresh tool at {}; bootstrap this host first'.format(script))
+    if not HUB_RUN.is_file():
+        raise SystemExit('install: no hub reporter at {}'.format(HUB_RUN))
+    config = {'Label': LABEL,
+              'ProgramArguments': ['/bin/zsh', str(HUB_RUN), job_id, '--', PYTHON, str(script)],
+              'StartInterval': 3600, 'RunAtLoad': True,
+              'StandardOutPath': str(DATA / (LABEL + '.log')),
+              'StandardErrorPath': str(DATA / (LABEL + '.error.log'))}
+    target = LAUNCH_AGENTS / (LABEL + '.plist')
+    if target.exists():
+        previous = plistlib.loads(target.read_bytes())
+        if previous.get('ProgramArguments', [])[-1:] != [str(script)]:
+            raise SystemExit('install: {} belongs to another owner'.format(target))
+        subprocess.run(['/bin/launchctl', 'bootout', DOMAIN, str(target)], capture_output=True)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    DATA.mkdir(parents=True, exist_ok=True)
+    target.write_bytes(plistlib.dumps(config))
+    run('install', ['/bin/launchctl', 'bootstrap', DOMAIN, target])
+    return 'installed {} for hub job {}, every {} seconds'.format(LABEL, job_id, config['StartInterval'])
+
+
+def demo():
+    global CONFIG, CURRENT, fetch_tip, run
+    root = Path(tempfile.mkdtemp(prefix='refresh-agent-demo.'))
+    CONFIG, CURRENT = root / 'config.json', root / 'agent-current'
+    old, new = 'a' * 40, 'b' * 40
+    url, token_ref = 'https://plans.example', 'op://Test/Plan/token'
+    tip = {'value': old}
+    invoked = []
+    fetch_tip = lambda: tip['value']
+    run = lambda step, command: invoked.append([str(part) for part in command])
+
+    def fails(step, fragment=''):
+        try:
+            refresh()
+        except SystemExit as failure:
+            assert str(failure).startswith(step + ':'), failure
+            assert fragment in str(failure), failure
+            return
+        raise AssertionError('expected ' + step + ' to fail')
+
+    try:
+        fails('config', 'bootstrap this host first')
+        CONFIG.write_text('{ not json')
+        fails('config')
+        CONFIG.write_text(json.dumps({'url': url}))
+        fails('config')
+        CONFIG.write_text(json.dumps({'url': url, 'tokenRef': ''}))
+        fails('config')
+
+        CONFIG.write_text(json.dumps({'url': url, 'tokenRef': token_ref}))
+        fails('installed', 'bootstrap this host first')
+
+        (CURRENT / 'bin').mkdir(parents=True)
+        (CURRENT / 'bin/bootstrap-agent').write_text('#!/usr/bin/env python3\n')
+        (CURRENT / '.release-revision').write_text(old + '\n')
+
+        tip['value'] = 'HEAD'
+        fails('resolve')
+
+        tip['value'] = old
+        assert refresh() == 'up to date at ' + old
+        assert invoked == [], invoked
+
+        tip['value'] = new
+        assert refresh() == 'updated {} -> {}'.format(old, new)
+        assert invoked == [[PYTHON, str(CURRENT / 'bin/bootstrap-agent'), '--revision', new,
+                            '--url', url, '--token-ref', token_ref]], invoked
+
+        (CURRENT / '.release-revision').write_text('not a revision\n')
+        fails('installed')
+        print('self-check passed')
+    finally:
+        shutil.rmtree(root, ignore_errors=True)
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Update this host to the current tip of main.')
+    parser.add_argument('--install', action='store_true', help='schedule this tool as an hourly user LaunchAgent')
+    parser.add_argument('--job-id', help='hub job id the scheduled run reports under')
+    parser.add_argument('--self-check', action='store_true', help='prove the compare and failure logic against temp dirs')
+    args = parser.parse_args()
+    if args.self_check:
+        demo()
+    elif args.install:
+        print(install(args.job_id))
+    elif args.job_id:
+        parser.error('--job-id only applies to --install')
+    else:
+        # Two hourly runs, or one racing a manual bootstrap-agent, would both clear
+        # install-agent's guards and then race the agent-current relink.
+        import fcntl
+        DATA.mkdir(parents=True, exist_ok=True)
+        with (DATA / 'refresh.lock').open('a') as lock:
+            try:
+                fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            except OSError:
+                raise SystemExit('lock: another refresh is already running')
+            print(refresh())

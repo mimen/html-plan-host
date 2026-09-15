@@ -54,6 +54,18 @@ python3 bin/bootstrap-agent --revision <full-commit-sha> \
 
 The bootstrap fetches the GitHub archive directly into `~/.local/share/html-plan-host/packages/<sha>`. `bin/install-agent` links its CLI through `~/.local/bin/html-plan` and its skills through `~/.codex/skills` and `~/.agents/skills`. It rejects conflicting existing files instead of overwriting them. This installation does not edit Claude's settings or copy packages into the synced vault. In the personal fleet, the synced house `html-plan` entry is only an adapter that reads the installed package. Other Claude installations can use the repo's native marketplace plugin instead.
 
+### Keeping installed packages current
+
+Each host pins its own package, so a skill fix merged to `main` does not reach a machine until that machine reinstalls. `bin/refresh-agent` closes that gap. It compares the installed `.release-revision` against the tip of `main` and, when they differ, re-runs `bin/bootstrap-agent` from the currently installed package, using the `url` and `tokenRef` already in `~/.config/html-plan-host/config.json`. Running the installer from the package being replaced lets the installer itself update on the same tick. A matching pin prints one line and exits zero. The tool never writes that config and never installs onto a host that was never bootstrapped; a missing config, a missing package, and an unreachable GitHub each exit nonzero naming the failing step.
+
+```sh
+python3 bin/refresh-agent                   # check and update this host once
+python3 bin/refresh-agent --self-check      # prove the compare and failure logic, no network
+python3 bin/refresh-agent --install --job-id <host>.launchd.html-plan-agent-refresh
+```
+
+`--install` writes and bootstraps the `com.mimen.html-plan-host.agent-refresh` user LaunchAgent, which runs hourly through the hub reporter so an unattended failure surfaces as a failed run rather than silence. The hub job id differs per host, so it is an explicit argument. The command refuses to overwrite a plist at that label that it did not write.
+
 A machine-local, nonsecret `~/.config/html-plan-host/config.json` selects the personal deployment:
 
 ```json

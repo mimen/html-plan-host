@@ -1,6 +1,6 @@
 ---
 deployment_status: verified
-deployment_production_trigger: explicit bin/mini deploy of a committed revision
+deployment_production_trigger: merge to main
 deployment_branch_command: bun run dev with a separate database and port
 deployment_verify_command: bin/mini verify
 deployment_last_assessed: 2026-09-07
@@ -22,8 +22,10 @@ The app listens on `127.0.0.1:3490`. Its dedicated Postgres 17 cluster listens o
 | `bin/mini verify` | Check live revision, health, private routing, and loopback listeners |
 | `bin/mini backup` | Dump Postgres and copy a protected snapshot to the calling Mac |
 | `bin/mini deploy <previous-sha>` | Roll back code using an earlier committed revision |
+| `deploy/watch.py --once` | Run a single auto-deploy check on the Mini without scheduling it |
+| `deploy/watch.py --self-check` | Prove the watcher's compare, stage, and retry logic against temp dirs |
 
-`PLAN_MINI_SSH` selects the SSH alias, default `macmini`. Deployment resolves the remote home directory over SSH. It transfers a Git archive into `~/Programming/Deployments/html-plan-host/releases/<sha>`, installs locked dependencies, runs tests and typecheck, snapshots the database, and changes the `current` symlink. A failed activation restores the previous code release when one exists. Releases are immutable; uncommitted trees cannot deploy. Branches do not auto-deploy or receive public previews.
+`PLAN_MINI_SSH` selects the SSH alias, default `macmini`. Deployment resolves the remote home directory over SSH. It transfers a Git archive into `~/Programming/Deployments/html-plan-host/releases/<sha>`, installs locked dependencies, runs tests and typecheck, snapshots the database, and changes the `current` symlink. A failed activation restores the previous code release when one exists. Releases are immutable; uncommitted trees cannot deploy. A merge to `main` activates automatically through the resident watcher described below. Branches do not auto-deploy or receive public previews.
 
 Two user LaunchAgents keep the app and database running. They start after login, not before FileVault unlock. The server uses `html-plan-host:server@personal` argv identity; Postgres uses `html-plan-host:postgres@personal` as its cluster name. The service does not depend on this agent session staying open.
 

@@ -1,6 +1,6 @@
 # Plan document theme — Nocturne
 
-The house default plan theme, **Nocturne**. A technical-reference look built for
+One of three plan themes, **Nocturne**. A technical-reference look built for
 dense, deeply-cited docs: a compact left contents rail, a numbered `.steps`
 ladder, semantic `.note` callouts, per-section `.cites` footers, attributed
 quotes, a headline `.stats` strip, comparison matrices, definition lists, and a
@@ -8,10 +8,12 @@ tokenized inline-SVG diagram system. Space Grotesk display over a system body,
 JetBrains Mono, a blue accent. It reads like an engineering runbook or a system
 reference.
 
-Build on **Nocturne** unless the content or audience calls for another theme. It
-covers the full house component set on its own. Pick **Margin** for an editorial
-writeup with sources in the right margin; **Console** for a decision/plan doc
-with a stat strip and card panels. Build each document on exactly one theme;
+**Console** ([`plan-themes-console.md`](plan-themes-console.md)) is the house
+default theme. Take it unless the document wants something else. Pick
+**Nocturne** for a technical reference or deep-dive that leans on the step
+ladder, semantic notes, and heavy inline citation. It covers the full house
+component set on its own. Pick **Margin** for an editorial writeup with sources
+in the right margin. Build each document on exactly one theme;
 don't mix their class systems.
 
 Nocturne was designed dark, but it **follows the OS** like the others: the dark

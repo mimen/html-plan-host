@@ -101,5 +101,34 @@ class InstallerTests(unittest.TestCase):
         self.assertEqual((self.home / '.codex/skills/html-plan').readlink(), self.home / '.local/share/html-plan-host/agent-current/skills/html-plan')
 
 
+class WatchInstallTests(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name).resolve()
+        self.clone = self.root / 'clone'
+        (self.clone / 'deploy').mkdir(parents=True)
+        self.data = self.root / 'data'
+        self.data.mkdir()
+        for item in [patch.object(HOST, 'CLONE', self.clone), patch.object(HOST, 'DATA', self.data)]:
+            item.start()
+            self.addCleanup(item.stop)
+
+    def test_missing_watcher_refuses_to_install(self):
+        with patch.object(HOST, 'load_job') as jobs:
+            with self.assertRaisesRegex(SystemExit, 'No watcher at'):
+                HOST.watch_install()
+        jobs.assert_not_called()
+
+    def test_installs_the_watcher_from_the_clone(self):
+        watcher = self.clone / 'deploy/watch.py'
+        watcher.write_text('#!/usr/bin/env python3\n')
+        with patch.object(HOST, 'load_job') as jobs:
+            HOST.watch_install()
+        label, arguments = jobs.call_args[0]
+        self.assertEqual(label, 'com.mimen.html-plan-host.deploy-watch')
+        self.assertEqual(arguments, ['/usr/bin/python3', watcher])
+
+
 if __name__ == '__main__':
     unittest.main()

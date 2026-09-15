@@ -4,6 +4,8 @@ import { config } from "../config.ts";
 import { baseUrl } from "../auth.ts";
 import { getLatestPublishedVersion, getPlanBySlug, pushDraft } from "../plans.ts";
 
+const DESCRIPTION_MAX_LENGTH = 150;
+
 export const apiRoutes = new Hono();
 
 function tokenMatches(header: string | undefined): boolean {
@@ -61,13 +63,20 @@ apiRoutes.post("/plans", async (c) => {
 
   const title = body.title?.trim();
   const html = body.html;
+  const description = body.description?.trim() || undefined;
   if (!title) return c.json({ error: "title is required" }, 400);
   if (!html || !html.trim()) return c.json({ error: "html is required" }, 400);
+  if (description && description.length > DESCRIPTION_MAX_LENGTH) {
+    return c.json(
+      { error: `description must be ${DESCRIPTION_MAX_LENGTH} characters or fewer (got ${description.length})` },
+      400,
+    );
+  }
 
   const result = await pushDraft({
     slug: body.slug?.trim() || undefined,
     title,
-    description: body.description?.trim() || undefined,
+    description,
     html,
     summary: body.summary?.trim() || undefined,
     updatedBy: body.updatedBy?.trim() || "cli",

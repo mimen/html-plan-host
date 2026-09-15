@@ -2,7 +2,7 @@
 
 Three plan themes ship with this skill: **Margin** (this file), **Console**
 ([`plan-themes-console.md`](plan-themes-console.md)), and **Nocturne**
-([`plan-themes-nocturne.md`](plan-themes-nocturne.md)). **Nocturne** is the default; use it unless the
+([`plan-themes-nocturne.md`](plan-themes-nocturne.md)). **Console** is the default; use it unless the
 content or audience calls for another. Build each document on exactly one;
 don't mix their class systems. Pick **Margin** for a reading-first
 writeup with heavy per-section citation (sources in the right margin); **Console**

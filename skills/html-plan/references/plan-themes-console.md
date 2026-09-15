@@ -1,6 +1,6 @@
 # Plan document theme — Console
 
-One of three plan themes, **Console**. A denser, product/engineering-doc look:
+The house default plan theme, **Console**. A denser, product/engineering-doc look:
 a sticky **numbered contents rail** on the left, a wide single content column,
 an **at-a-glance stat strip** under the title, and card-style `.panel` and
 `.callout` blocks. Where **Margin** is editorial (serif display, sources in the
@@ -8,11 +8,11 @@ right margin), Console is utilitarian — good for implementation plans, rollout
 briefs, audits, and status docs that lean on tables, config blocks, and
 diagrams more than long prose.
 
-**Nocturne** ([`plan-themes-nocturne.md`](plan-themes-nocturne.md)) is the house
-default theme. Take it unless the document wants something else. Pick **Margin**
-([`plan-themes.md`](plan-themes.md)) for a reading-first writeup with sources in
-the right margin. Pick **Console** for a decision or plan doc carried by a stat
-strip, config blocks, and comparison tables under a scannable section rail.
+**Console** is the default theme. Take it unless the document wants something
+else. Pick **Margin** ([`plan-themes.md`](plan-themes.md)) for a reading-first
+writeup with sources in the right margin. Pick **Nocturne**
+([`plan-themes-nocturne.md`](plan-themes-nocturne.md)) for a technical reference
+or deep-dive carried by a step ladder, semantic notes, and heavy inline citation.
 Build each document on exactly one theme. Don't mix their class systems.
 
 It follows the OS. Light tokens live on `:root`, dark tokens in

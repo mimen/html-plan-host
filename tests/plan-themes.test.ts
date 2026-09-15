@@ -55,7 +55,7 @@ test("Nocturne theme follows the OS and ships its skeleton", () => {
   expect(nocturneText).toContain("nav.toc a.current");
 });
 
-// Nocturne is the default, so it carries the full house component set too.
+// Every theme carries the full house component set, whichever is the default.
 test("Nocturne styles the house components and demonstrates them", () => {
   expect(nocturneText).toContain("tr.pick");
   expect(nocturneText).toContain('<table class="matrix">');
@@ -72,9 +72,11 @@ const skillText = readFileSync(
 const squish = (value: string) => value.replace(/\s+/g, " ");
 
 // The default was previously unstated, so every plan improvised a theme.
-test("Nocturne is the stated default, in both entry points", () => {
-  expect(squish(skillText)).toMatch(/\*\*Nocturne\*\* is the default/);
-  expect(squish(text)).toMatch(/\*\*Nocturne\*\* is the default/);
+test("Console is the stated default, in both entry points", () => {
+  expect(squish(skillText)).toMatch(/\*\*Console\*\* is the default/);
+  expect(squish(text)).toMatch(/\*\*Console\*\* is the default/);
   expect(squish(skillText)).not.toMatch(/\*\*Margin\*\* is the default/);
   expect(squish(text)).not.toMatch(/\*\*Margin\*\* is the default/);
+  expect(squish(skillText)).not.toMatch(/\*\*Nocturne\*\* is the default/);
+  expect(squish(text)).not.toMatch(/\*\*Nocturne\*\* is the default/);
 });

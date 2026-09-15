@@ -49,7 +49,7 @@ in this plugin, see Deliver.
   **Nocturne**
   ([`references/plan-themes-nocturne.md`](references/plan-themes-nocturne.md) — a
   technical reference look: step ladder, semantic notes, per-section citations).
-  **Nocturne** is the default; use it unless the content or audience calls for
+  **Console** is the default; use it unless the content or audience calls for
   another. Paste the chosen theme's font link and CSS, then build on its markup
   skeleton. Light
   `:root` plus `prefers-color-scheme: dark`; do not hard-code a page-level dark

@@ -96,7 +96,7 @@ def refresh():
 
 def install(job_id):
     if not job_id or job_id.startswith('-'):
-        raise SystemExit('install: --job-id must be a hub job id such as mini.launchd.html-plan-agent-refresh')
+        raise SystemExit('install: --job-id must be a hub job id such as mini.launchd.' + LABEL)
     # The scheduled command goes through the agent-current link rather than this
     # file's resolved path, which moves to a new package directory on every
     # upgrade and would leave the job pointing at a stale revision.
@@ -191,4 +191,13 @@ if __name__ == '__main__':
     elif args.job_id:
         parser.error('--job-id only applies to --install')
     else:
-        print(refresh())
+        # Two hourly runs, or one racing a manual bootstrap-agent, would both clear
+        # install-agent's guards and then race the agent-current relink.
+        import fcntl
+        DATA.mkdir(parents=True, exist_ok=True)
+        with (DATA / 'refresh.lock').open('a') as lock:
+            try:
+                fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            except OSError:
+                raise SystemExit('lock: another refresh is already running')
+            print(refresh())

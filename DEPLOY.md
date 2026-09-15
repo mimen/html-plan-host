@@ -61,7 +61,7 @@ Each host pins its own package, so a skill fix merged to `main` does not reach a
 ```sh
 python3 bin/refresh-agent                   # check and update this host once
 python3 bin/refresh-agent --self-check      # prove the compare and failure logic, no network
-python3 bin/refresh-agent --install --job-id <host>.launchd.html-plan-agent-refresh
+python3 bin/refresh-agent --install --job-id <host>.launchd.com.mimen.html-plan-host.agent-refresh
 ```
 
 `--install` writes and bootstraps the `com.mimen.html-plan-host.agent-refresh` user LaunchAgent, which runs hourly through the hub reporter so an unattended failure surfaces as a failed run rather than silence. The hub job id differs per host, so it is an explicit argument. The command refuses to overwrite a plist at that label that it did not write.

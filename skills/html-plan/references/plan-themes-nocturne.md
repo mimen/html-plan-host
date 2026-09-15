@@ -1,22 +1,24 @@
 # Plan document theme — Nocturne
 
-The third plan theme, **Nocturne**. A technical-reference look built for
+The house default plan theme, **Nocturne**. A technical-reference look built for
 dense, deeply-cited docs: a compact left contents rail, a numbered `.steps`
 ladder, semantic `.note` callouts, per-section `.cites` footers, attributed
-quotes, and a tokenized inline-SVG diagram system. Space Grotesk display over
-a system body, JetBrains Mono, a blue accent. It reads like an engineering
-runbook or a system reference.
+quotes, a headline `.stats` strip, comparison matrices, definition lists, and a
+tokenized inline-SVG diagram system. Space Grotesk display over a system body,
+JetBrains Mono, a blue accent. It reads like an engineering runbook or a system
+reference.
 
-Pick **Margin** for an editorial writeup with sources in the right margin;
-**Console** for a decision/plan doc with a stat strip and card panels;
-**Nocturne** for a reference or deep-dive with steps, notes, and heavy inline
-citation. Build each document on exactly one theme.
+Build on **Nocturne** unless the content or audience calls for another theme. It
+covers the full house component set on its own. Pick **Margin** for an editorial
+writeup with sources in the right margin; **Console** for a decision/plan doc
+with a stat strip and card panels. Build each document on exactly one theme;
+don't mix their class systems.
 
 Nocturne was designed dark, but it **follows the OS** like the others: the dark
 palette lives in `@media (prefers-color-scheme: dark)`, a light palette on
-`:root`, and print uses the light tokens. Component tints (notes, tags, diagram
-nodes) are `color-mix` of the semantic tokens, so they adapt to both modes
-instead of being hard-coded for dark.
+`:root`, and print uses the light tokens. Component tints (notes, tags, stats,
+picked matrix rows, diagram nodes) are `color-mix` of the semantic tokens, so
+they adapt to both modes instead of being hard-coded for dark.
 
 ## Density
 
@@ -96,6 +98,12 @@ p { margin: 0 0 13px; } strong { color: var(--text); }
 .tldr ol { margin: 0; padding-left: 20px; } .tldr li { margin-bottom: 11px; } .tldr li:last-child { margin-bottom: 0; }
 .tldr b { color: var(--text); }
 
+/* headline stat strip — three to five cells, value then mono label */
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin: 0 0 44px; }
+.stat { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 13px 15px; }
+.stat .v { display: block; font-family: var(--display); font-size: 26px; font-weight: 700; line-height: 1.05; letter-spacing: -.02em; color: var(--accent); }
+.stat .k { display: block; margin-top: 8px; font-family: var(--mono); font-size: 10.5px; text-transform: uppercase; letter-spacing: .06em; color: var(--faint); }
+
 /* callouts — color-mix keeps tints correct in light and dark */
 .note { border-radius: 10px; padding: 12px 15px; margin: 14px 0; font-size: 14px; border: 1px solid var(--border); background: var(--panel); }
 .note.good { border-color: color-mix(in srgb, var(--good) 45%, var(--border)); background: color-mix(in srgb, var(--good) 8%, var(--panel)); }
@@ -115,6 +123,18 @@ th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--bor
 th { color: var(--faint); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
 tbody tr:last-child td { border-bottom: none; }
 td code { white-space: nowrap; }
+
+/* comparison matrix; tr.pick is the chosen option, marked by rule and glyph */
+table.matrix tbody td:first-child { color: var(--text); font-weight: 600; }
+.matrix tr.pick td { background: color-mix(in srgb, var(--accent) 8%, var(--panel)); color: var(--text); }
+.matrix tr.pick td:first-child { box-shadow: inset 2px 0 0 var(--accent); }
+.matrix tr.pick td:first-child::before { content: "▸ "; color: var(--accent); }
+
+/* term definitions */
+dl.defs { margin: 14px 0 4px; }
+.defs dt { font-family: var(--display); font-size: 14px; font-weight: 600; color: var(--text); margin-top: 13px; }
+.defs dt:first-child { margin-top: 0; }
+.defs dd { margin: 3px 0 0; padding-left: 12px; border-left: 1px solid var(--border); font-size: 14px; }
 
 /* numbered step ladder; .manual for a human-only step */
 .steps { list-style: none; counter-reset: step; padding: 0; margin: 14px 0 0; }
@@ -164,7 +184,7 @@ footer { color: var(--faint); font-size: 12.5px; border-top: 1px solid var(--bor
 }
 @media print {
   .shell { display: block; } nav.toc { display: none; }
-  .note, .tldr, pre, table, .diagram-wrap { break-inside: avoid; }
+  .note, .tldr, pre, table, .diagram-wrap, .stat, .defs dd { break-inside: avoid; }
 }
 ```
 
@@ -192,6 +212,12 @@ footer { color: var(--faint); font-size: 12.5px; border-top: 1px solid var(--bor
       <ol><li><b>Lead point.</b> …</li></ol>
     </div>
 
+    <div class="stats">
+      <div class="stat"><span class="v">11 min</span><span class="k">Median repro time</span></div>
+      <div class="stat"><span class="v">40 GB</span><span class="k">Monthly storage</span></div>
+      <div class="stat"><span class="v">3</span><span class="k">Owners on call</span></div>
+    </div>
+
     <section id="one">
       <h2>1. First section</h2>
       <p class="kicker">Optional one-line framing.</p>
@@ -202,6 +228,22 @@ footer { color: var(--faint); font-size: 12.5px; border-top: 1px solid var(--bor
         <li class="manual"><h4>Human step <span class="tag m">manual</span></h4><p>…</p></li>
       </ol>
       <aside class="cites"><b>Sources</b> <a href="#">repo</a> <span class="sep">·</span> <a href="#">PR</a></aside>
+    </section>
+
+    <section id="two">
+      <h2>2. Second section</h2>
+      <table class="matrix">
+        <thead><tr><th>Option</th><th>Cost</th><th>Verdict</th></tr></thead>
+        <tbody>
+          <tr class="pick"><td>Option A</td><td>…</td><td>Picked. Reason in one line.</td></tr>
+          <tr><td>Option B</td><td>…</td><td>Rejected. Reason in one line.</td></tr>
+        </tbody>
+      </table>
+      <dl class="defs">
+        <dt>Term</dt><dd>What it means in this document, in one line.</dd>
+        <dt>Second term</dt><dd>…</dd>
+      </dl>
+      <aside class="cites"><b>Sources</b> <a href="#">benchmark</a></aside>
     </section>
 
     <footer>Last updated 2026-01-01. Sources: …</footer>
@@ -236,21 +278,34 @@ Rules the CSS assumes:
   sources. Separate links with `<span class="sep">·</span>`.
 - The step ladder is `<ol class="steps">`; add `class="manual"` to a human-only
   step, and label each with a `.tag` (`.c` claude, `.a` agent, `.m` manual).
+- The stat strip is `<div class="stats">` of `.stat` cells, three to five, each a
+  `.v` value and a `.k` label. It sits between the `.tldr` and the first section,
+  and holds the document's headline numbers. Keep values short enough to stay on
+  one line, unit included (`11 min`, `40 GB`).
+- A comparison table is `<table class="matrix">`; the chosen option's row is
+  `<tr class="pick">`. The CSS supplies the accent rule, the tint, and the `▸`
+  marker, so don't also add a "Picked" `.tag`. State the reason in the verdict
+  cell. Mark at most one row.
+- Term definitions are `<dl class="defs">` with one `<dt>`/`<dd>` pair per term.
+  Use it instead of a list whenever the item is a term plus its meaning.
 - Diagrams are inline SVG inside `<div class="diagram-wrap">`. Node bodies use
   `<foreignObject>` with a `<div>`, grouped `.n-src` / `.n-a` / `.n-b` /
   `.n-both` / `.n-onlyb`. Fills come from `color-mix` of the tokens, so they flip
   with the OS. Do not hard-code hex fills.
 - Convey state by shape or label too, not color alone: pair a `.note`/`.tag`
-  with its word.
+  with its word, and keep the verdict cell of a `tr.pick` explicit.
 
 Components the CSS already styles, use them before inventing new ones:
 
 | Class | For |
 | --- | --- |
 | `.tldr` | The "short version" box at the top. |
+| `.stats` of `.stat` with `.v`/`.k` | Three to five headline numbers under the TL;DR. |
 | `.note` + `.good`/`.warn`/`.bad`/`.info` | Semantic callouts. |
 | `ol.steps` with `.manual` and `.tag` | A numbered procedure with per-step actor tags. |
 | `blockquote.q` with `.attr` | An attributed quote. |
+| `table.matrix` with `tr.pick` | Options comparison; the picked row is ruled and tinted. |
+| `dl.defs` | Term definitions. |
 | `aside.cites` | Per-section source footer (dashed rule). |
 | `.diagram-wrap` + `svg.arch` | Architecture/flow diagram with tokenized nodes. |
 | `pre`, `code` | Code and config blocks. |

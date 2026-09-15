@@ -1,6 +1,6 @@
 # Plan document theme — Console
 
-The second plan theme, **Console**. A denser, product/engineering-doc look:
+One of three plan themes, **Console**. A denser, product/engineering-doc look:
 a sticky **numbered contents rail** on the left, a wide single content column,
 an **at-a-glance stat strip** under the title, and card-style `.panel` and
 `.callout` blocks. Where **Margin** is editorial (serif display, sources in the
@@ -8,10 +8,12 @@ right margin), Console is utilitarian — good for implementation plans, rollout
 briefs, audits, and status docs that lean on tables, config blocks, and
 diagrams more than long prose.
 
-Pick **Margin** for a reading-first writeup with heavy per-section citation;
-pick **Console** for a decision/plan doc with stats, config, tables, and a
-scannable section rail. Build on exactly one theme per document — don't mix
-their class systems.
+**Nocturne** ([`plan-themes-nocturne.md`](plan-themes-nocturne.md)) is the house
+default theme. Take it unless the document wants something else. Pick **Margin**
+([`plan-themes.md`](plan-themes.md)) for a reading-first writeup with sources in
+the right margin. Pick **Console** for a decision or plan doc carried by a stat
+strip, config blocks, and comparison tables under a scannable section rail.
+Build each document on exactly one theme. Don't mix their class systems.
 
 It follows the OS. Light tokens live on `:root`, dark tokens in
 `@media (prefers-color-scheme: dark)`. Do not hard-code a page-level dark
@@ -118,11 +120,28 @@ p { margin: 0 0 14px; } a { color: var(--accent-ink); }
 .callout.ok { border-left-color: var(--ok); background: var(--ok-wash); }
 .callout .lbl { font-family: var(--mono); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-faint); display: block; margin-bottom: 4px; }
 
+/* Per-section sources footer: last thing inside every numbered section */
+.sources { margin-top: 24px; padding-top: 11px; border-top: 1px solid var(--line); font-family: var(--mono); font-size: 11.5px; line-height: 1.7; color: var(--ink-faint); }
+.sources .lbl { letter-spacing: .1em; text-transform: uppercase; color: var(--ink-faint); margin-right: 9px; }
+.sources a { color: var(--ink-soft); }
+.sources a:hover { color: var(--accent-ink); }
+.sources .sep { color: var(--line-strong); margin: 0 7px; }
+
 ul, ol { margin: 0 0 14px; padding-left: 22px; } li { margin: 5px 0; } li::marker { color: var(--accent); }
+
+/* Definition list: mono term column, prose column */
+.defs { display: grid; grid-template-columns: 172px 1fr; gap: 10px 16px; margin: 16px 0; }
+.defs dt { font-family: var(--mono); font-size: 12.5px; color: var(--accent-ink); padding-top: 2px; }
+.defs dd { margin: 0; font-size: 15px; color: var(--ink-soft); }
+
 table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 14px; }
 th, td { text-align: left; padding: 9px 11px; border-bottom: 1px solid var(--line); vertical-align: top; }
 th { font-family: var(--mono); font-size: 11.5px; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-faint); border-bottom: 1px solid var(--line-strong); }
 tbody tr:hover { background: var(--accent-wash-2); }
+/* Options comparison; .pick marks the chosen row (cell tints paint over the row hover) */
+table.matrix td { font-size: 13.5px; }
+table.matrix tr.pick td { background: var(--accent-wash); color: var(--ink); font-weight: 600; border-bottom-color: var(--line-strong); }
+table.matrix tr.pick td:first-child { box-shadow: inset 2px 0 0 var(--accent); }
 td code, p code, li code { font-family: var(--mono); font-size: 12.5px; background: var(--line); padding: 1px 5px; border-radius: 4px; }
 
 .tag { font-family: var(--mono); font-size: 11px; padding: 2px 7px; border-radius: 5px; white-space: nowrap; display: inline-block; }
@@ -156,6 +175,7 @@ footer { margin-top: 62px; padding-top: 20px; border-top: 1px solid var(--line);
   .glance { grid-template-columns: 1fr 1fr; }
   .grid2 { grid-template-columns: 1fr; }
   .phase { grid-template-columns: 1fr; } .phase .p-when { padding-bottom: 0; }
+  .defs { display: block; } .defs dt { margin-top: 12px; } .defs dd { margin: 2px 0 0; }
 }
 @media print {
   :root { --bg:#fff; --panel:#fff; --accent-wash:#f2eefb; --shadow: none; }
@@ -204,14 +224,23 @@ footer { margin-top: 62px; padding-top: 20px; border-top: 1px solid var(--line);
       <p class="sub">Optional one-line subtitle.</p>
       <p>Prose…</p>
       <div class="callout"><span class="lbl">Note</span> A note the reader must not skip.</div>
+      <dl class="defs">
+        <dt>term</dt><dd>What the term means in this document.</dd>
+        <dt>other term</dt><dd>One line, no hedging.</dd>
+      </dl>
+      <aside class="sources"><span class="lbl">Sources</span><a href="#">repo</a><span class="sep">·</span><a href="#">PR</a></aside>
     </section>
 
     <section id="two">
       <h2><span class="num">02</span> Second section</h2>
-      <table>
-        <thead><tr><th>Col</th><th>Col</th></tr></thead>
-        <tbody><tr><td>…</td><td><span class="tag ok">ok</span></td></tr></tbody>
+      <table class="matrix">
+        <thead><tr><th>Option</th><th>Cost</th><th>Verdict</th></tr></thead>
+        <tbody>
+          <tr class="pick"><td>Option A</td><td>Low</td><td><span class="tag accent">Picked</span></td></tr>
+          <tr><td>Option B</td><td>High</td><td><span class="tag warn">rejected</span></td></tr>
+        </tbody>
       </table>
+      <aside class="sources"><span class="lbl">Sources</span><a href="#">benchmark</a><span class="sep">·</span><a href="#">vendor docs</a></aside>
     </section>
 
     <footer>
@@ -247,8 +276,17 @@ Rules the CSS assumes:
   section in view with `.current`. Every `nav.rail` href must match a `section` id.
 - `h2` carries `<span class="num">N</span>` for the section number badge; keep
   the rail's `<span class="rn">N</span>` numbers in sync with them.
+- Every numbered section ends with its own `<aside class="sources">`, placed
+  last inside the section. Label it with `<span class="lbl">Sources</span>` and
+  separate the links with `<span class="sep">·</span>`.
 - The stat strip is optional but idiomatic: three to five `.stat` tiles of a
   headline number (`.n`) plus a short label (`.l`). Drop it for pure-prose docs.
+- A comparison table is `<table class="matrix">`. Mark the chosen row
+  `<tr class="pick">` and keep the word in its verdict cell
+  (`<span class="tag accent">Picked</span>`), so the pick reads without the tint.
+- Term definitions go in `<dl class="defs">`, one `dd` per `dt`. Keep terms short
+  enough for the mono term column; the grid collapses to stacked rows on narrow
+  screens.
 - Diagrams are inline SVG inside `<div class="diagram">`. Theme shapes with
   `fill="var(--panel)"` / `stroke="var(--line-strong)"` / `var(--accent)` and
   `currentColor` for edges — never hard-code light/dark fills.
@@ -261,8 +299,11 @@ Components the CSS already styles — use them before inventing new ones:
 | --- | --- |
 | `.panel`, `.grid2` | A card, or two side-by-side cards. |
 | `.callout`, `.callout.ok`, `.callout.warn` | A note, a good-news status, or a warning the reader must not skip. |
+| `aside.sources` with `.lbl` and `.sep` | Per-section source footer; every numbered section ends with one. |
 | `.glance` of `.stat` | Three to five headline numbers under the title. |
 | `.tag` + `.ok`/`.warn`/`.accent`/`.danger` | Inline status/label pill. |
+| `table.matrix` with `tr.pick` | Options comparison; the chosen row. |
+| `dl.defs` | Term definitions in a mono term column. |
 | `.phase` rows | A phased rollout or timeline (when-label + body). |
 | `pre` with `.c`/`.k`/`.v` spans | Config/code blocks with comment/key/value tinting. |
 | `.pill` in `.meta-row` | Key/value chips in the hero. |

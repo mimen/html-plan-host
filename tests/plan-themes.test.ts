@@ -32,6 +32,16 @@ test("Console theme follows the OS and ships its skeleton", () => {
   expect(consoleText).toContain("nav.rail a.current");
 });
 
+// Agents improvised these three when Console lacked them, so each theme owns
+// the full house component set: per-section sources, a picked row, definitions.
+test("Console styles the house components and demonstrates them", () => {
+  expect(consoleText).toContain("table.matrix tr.pick");
+  expect(consoleText).toContain('<aside class="sources">');
+  expect(consoleText).toContain('<table class="matrix">');
+  expect(consoleText).toContain('<tr class="pick">');
+  expect(consoleText).toContain('<dl class="defs">');
+});
+
 const nocturneText = readFileSync(
   join(import.meta.dir, "../skills/html-plan/references/plan-themes-nocturne.md"),
   "utf8",
@@ -43,6 +53,15 @@ test("Nocturne theme follows the OS and ships its skeleton", () => {
   expect(nocturneText).toContain("## Markup skeleton");
   expect(nocturneText).toContain("IntersectionObserver");
   expect(nocturneText).toContain("nav.toc a.current");
+});
+
+// Nocturne is the default, so it carries the full house component set too.
+test("Nocturne styles the house components and demonstrates them", () => {
+  expect(nocturneText).toContain("tr.pick");
+  expect(nocturneText).toContain('<table class="matrix">');
+  expect(nocturneText).toContain('<tr class="pick">');
+  expect(nocturneText).toContain('<dl class="defs">');
+  expect(nocturneText).toContain('class="stats"');
 });
 
 const skillText = readFileSync(

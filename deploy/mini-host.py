@@ -143,6 +143,21 @@ def expose():
     run('/opt/homebrew/bin/tailscale', 'serve', '--bg', '--https=8490', 'http://127.0.0.1:3490')
 
 
+WATCH_LABEL = LABEL + '.deploy-watch'
+CLONE = HOME / 'Programming/Repos/html-plan-host'
+
+
+def watch_install():
+    # The watcher runs from the clone rather than from `current` so a broken
+    # deployment cannot strand the process whose job is to replace it.
+    watcher = CLONE / 'deploy/watch.py'
+    if not watcher.is_file():
+        raise SystemExit(f'No watcher at {watcher}; clone the repo on this host first')
+    load_job(WATCH_LABEL, ['/usr/bin/python3', watcher])
+    print(json.dumps({'label': WATCH_LABEL, 'command': str(watcher),
+                      'log': str(DATA / (WATCH_LABEL + '.log'))}, indent=2))
+
+
 if __name__ == '__main__':
     os.environ['PATH'] = str(HOME / '.bun/bin') + ':/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin'
     os.umask(0o077)
@@ -155,6 +170,8 @@ if __name__ == '__main__':
             activate(sys.argv[2])
     elif command == 'backup':
         backup()
+    elif command == 'watch-install':
+        watch_install()
     elif command == 'status':
         for label in [LABEL, PG_LABEL]:
             result = run('/bin/launchctl', 'print', DOMAIN + '/' + label, capture_output=True, text=True)
@@ -164,4 +181,4 @@ if __name__ == '__main__':
                     print(line.strip())
         run('/opt/homebrew/bin/tailscale', 'serve', 'status')
     else:
-        raise SystemExit('Expected activate <revision>, backup, or status')
+        raise SystemExit('Expected activate <revision>, backup, status, or watch-install')

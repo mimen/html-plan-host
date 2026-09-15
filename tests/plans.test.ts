@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
-import type { Plan, PlanVersion } from "../src/plans.ts";
+import type { Plan, PlanVersion, PushInput, PushResult } from "../src/plans.ts";
 
 const testEnv = {
   DATABASE_URL: "postgres://localhost:1/test_only",
@@ -25,13 +25,15 @@ const version: PlanVersion = {
 };
 const publishDraft = mock(async () => version);
 const getPlanBySlug = mock(async () => plan);
+const pushDraft = mock(async (_input: PushInput): Promise<PushResult> => {
+  throw new Error("Unexpected draft write");
+});
 mock.module("../src/plans.ts", () => ({
-  getPlanBySlug, publishDraft,
+  getPlanBySlug, publishDraft, pushDraft,
   getLatestPublishedVersion: async () => version,
   getVersion: async () => version,
   listPlans: async () => [],
   listVersions: async () => [version],
-  pushDraft: async () => { throw new Error("Unexpected draft write"); },
 }));
 
 const { app } = await import("../src/app.ts");
@@ -45,11 +47,20 @@ for (const [key, value] of Object.entries(previousEnv)) {
 beforeEach(() => {
   publishDraft.mockClear();
   getPlanBySlug.mockClear();
+  pushDraft.mockClear();
 });
 
 function publish(headers: Record<string, string>): Promise<Response> {
   return Promise.resolve(app.request("https://internal.test/p/test-plan/publish", {
     method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded", ...headers },
+  }));
+}
+
+function push(body: Record<string, unknown>): Promise<Response> {
+  return Promise.resolve(app.request("https://internal.test/api/plans", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${testEnv.PUBLISH_TOKEN}` },
+    body: JSON.stringify(body),
   }));
 }
 
@@ -104,5 +115,55 @@ describe("raw plan isolation", () => {
     expect(body).toContain('href="/p/test-plan/versions"');
     expect(body).toContain('src="/p/test-plan/draft?raw=1"');
     expect(body).not.toContain("Interactive plan");
+  });
+});
+
+describe("push description limit", () => {
+  test("rejects a 151-character description naming the limit and the actual length", async () => {
+    const response = await push({ title: "Test plan", html, description: "d".repeat(151) });
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({ error: "description must be 150 characters or fewer (got 151)" });
+    expect(pushDraft).not.toHaveBeenCalled();
+  });
+
+  test("accepts a 150-character description and forwards it verbatim", async () => {
+    pushDraft.mockImplementationOnce(async () => ({ slug: "test-plan", title: "Test plan", created: false }));
+    const response = await push({ slug: "test-plan", title: "Test plan", html, description: "d".repeat(150) });
+    expect(response.status).toBe(200);
+    expect(pushDraft).toHaveBeenCalledWith({
+      slug: "test-plan", title: "Test plan", description: "d".repeat(150), html, summary: undefined, updatedBy: "cli",
+    });
+    expect((await response.json()).draftUrl).toBe("https://plans.example.test/p/test-plan/draft");
+  });
+
+  test("measures the description after trimming", async () => {
+    pushDraft.mockImplementationOnce(async () => ({ slug: "test-plan", title: "Test plan", created: false }));
+    const response = await push({ slug: "test-plan", title: "Test plan", html, description: "  " + "d".repeat(150) + "  " });
+    expect(response.status).toBe(200);
+    expect(pushDraft.mock.calls[0]?.[0]?.description).toBe("d".repeat(150));
+  });
+});
+
+describe("summary subbar toggle", () => {
+  test("renders the summary collapsed when the preference cookie is absent", async () => {
+    getPlanBySlug.mockImplementationOnce(async () => ({ ...plan, draft_summary: "Rewrote the rollout section" }));
+    const body = await (await app.request("/p/test-plan/draft")).text();
+    expect(body).toContain('<input type="checkbox" id="summary-toggle" class="summary-state">');
+    expect(body).toContain('<label class="btn ghost summary-btn" for="summary-toggle"');
+    expect(body).toContain("Rewrote the rollout section");
+    expect(body).not.toContain('class="summary-state" checked');
+  });
+
+  test("renders the summary expanded when the preference cookie says so", async () => {
+    getPlanBySlug.mockImplementationOnce(async () => ({ ...plan, draft_summary: "Rewrote the rollout section" }));
+    const body = await (await app.request("/p/test-plan/draft", { headers: { Cookie: "hph_summary=1" } })).text();
+    expect(body).toContain('<input type="checkbox" id="summary-toggle" class="summary-state" checked>');
+  });
+
+  test("renders no control when the plan has no summary", async () => {
+    const body = await (await app.request("/p/test-plan/draft")).text();
+    expect(body).not.toContain("summary-toggle");
+    expect(body).not.toContain('class="subbar"');
+    expect(body).not.toContain("hph_summary");
   });
 });

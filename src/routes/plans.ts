@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import type { Context } from "hono";
+import { getCookie } from "hono/cookie";
 import { requireBrowserPublish, requireSession } from "../auth.ts";
 import {
   getLatestPublishedVersion,
@@ -10,7 +11,7 @@ import {
   publishDraft,
 } from "../plans.ts";
 import { dashboardPage } from "../views/dashboard.ts";
-import { planFramePage, versionsPage } from "../views/versions.ts";
+import { planFramePage, versionsPage, SUMMARY_COOKIE } from "../views/versions.ts";
 
 type Env = { Variables: { email: string } };
 
@@ -26,6 +27,7 @@ function serveHtml(c: Context, html: string): Response {
 }
 
 const isRaw = (c: Context) => c.req.query("raw") !== undefined;
+const summaryOpen = (c: Context) => getCookie(c, SUMMARY_COOKIE) === "1";
 
 planRoutes.get("/", async (c) => {
   const plans = await listPlans();
@@ -54,6 +56,7 @@ planRoutes.get("/p/:slug", async (c) => {
         summary: latest.summary,
       },
       `/p/${plan.slug}?raw=1`,
+      summaryOpen(c),
     ),
   );
 });
@@ -78,6 +81,7 @@ planRoutes.get("/p/:slug/draft", async (c) => {
         summary: plan.draft_summary,
       },
       `/p/${plan.slug}/draft?raw=1`,
+      summaryOpen(c),
     ),
   );
 });
@@ -123,6 +127,7 @@ planRoutes.get("/p/:slug/v/:n", async (c) => {
         summary: version.summary,
       },
       `/p/${plan.slug}/v/${n}?raw=1`,
+      summaryOpen(c),
     ),
   );
 });

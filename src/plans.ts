@@ -93,17 +93,19 @@ async function uniqueSlug(title: string): Promise<string> {
   throw new Error("Could not generate a unique slug");
 }
 
-// Token-facing write. Creates the plan on first push (draft only, nothing
-// published yet) or overwrites the existing draft. Never touches published
-// versions, so an agent cannot mint a milestone.
-export async function pushDraft(input: {
+export interface PushInput {
   slug?: string;
   title: string;
   description?: string;
   html: string;
   summary?: string;
   updatedBy: string;
-}): Promise<PushResult> {
+}
+
+// Token-facing write. Creates the plan on first push (draft only, nothing
+// published yet) or overwrites the existing draft. Never touches published
+// versions, so an agent cannot mint a milestone.
+export async function pushDraft(input: PushInput): Promise<PushResult> {
   const summary = input.summary ?? null;
   const description = input.description ?? null;
   const existing = input.slug ? await getPlanBySlug(input.slug) : null;

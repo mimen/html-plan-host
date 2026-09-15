@@ -3,6 +3,8 @@ import { config } from "../config.ts";
 import { themeCss } from "../themes.ts";
 import { esc, fmtDate, fmtShort, page } from "./layout.ts";
 
+export const SUMMARY_COOKIE = "hph_summary";
+
 export function versionsPage(plan: Plan, versions: PlanVersion[]): string {
   const latest = versions[0]?.version ?? 0;
 
@@ -70,7 +72,7 @@ export type FrameView =
 // Center-right is the single version-info location (a pager, or the draft
 // state) with its timestamp. Right is the contextual action then Versions,
 // which is always last. An optional second line carries the change summary.
-export function planFramePage(plan: Plan, view: FrameView, rawSrc: string): string {
+export function planFramePage(plan: Plan, view: FrameView, rawSrc: string, summaryOpen: boolean): string {
   const slug = esc(plan.slug);
   let statusZone: string;
   let action = "";
@@ -109,8 +111,26 @@ export function planFramePage(plan: Plan, view: FrameView, rawSrc: string): stri
     summaryText = view.summary;
   }
 
+  const hasSummary = Boolean(summaryText);
+  const summaryState = hasSummary
+    ? `<input type="checkbox" id="summary-toggle" class="summary-state"${summaryOpen ? " checked" : ""}>`
+    : "";
+  const summaryButton = hasSummary
+    ? `<label class="btn ghost summary-btn" for="summary-toggle" title="Show or hide the change summary">Summary<span class="chev">&rsaquo;</span></label>`
+    : "";
   const subbar = summaryText
     ? `<div class="subbar"><span class="lead">${esc(summaryLead)}</span><span class="txt">${esc(summaryText)}</span></div>`
+    : "";
+  // Not httpOnly because this script writes the cookie, and no secure flag
+  // because the toggle state is not sensitive and must keep working on a local
+  // http dev server.
+  const summaryScript = hasSummary
+    ? `<script>
+    var toggle = document.getElementById("summary-toggle");
+    toggle.addEventListener("change", function () {
+      document.cookie = "${SUMMARY_COOKIE}=" + (toggle.checked ? "1" : "0") + "; path=/; max-age=31536000; samesite=lax";
+    });
+  </script>`
     : "";
 
   return `<!doctype html>
@@ -161,11 +181,22 @@ export function planFramePage(plan: Plan, view: FrameView, rawSrc: string): stri
     .btn.primary { color: var(--primary-fg); background: var(--primary); font-weight: 600; }
     .btn.primary:hover { opacity: 0.9; }
 
+    .summary-state { position: absolute; width: 1px; height: 1px; opacity: 0; margin: 0; pointer-events: none; }
+    .summary-btn .chev {
+      display: inline-block; font-size: 15px; opacity: 0.6;
+      transform: rotate(90deg); transition: transform 0.15s ease, opacity 0.15s ease;
+    }
+    .summary-btn:hover .chev { opacity: 1; }
+    .summary-state:checked ~ .bar .summary-btn { color: var(--fg); background: var(--hover-surface); }
+    .summary-state:checked ~ .bar .summary-btn .chev { transform: rotate(-90deg); opacity: 1; }
+    .summary-state:focus-visible ~ .bar .summary-btn { outline: 2px solid var(--ring); outline-offset: 1px; }
+
     .subbar {
-      display: flex; align-items: baseline; gap: 0.5rem; padding: 7px 14px;
+      display: none; align-items: baseline; gap: 0.5rem; padding: 7px 14px;
       font-weight: 400; font-size: 12px; line-height: 1.45;
       background: var(--surface); border-bottom: 1px solid var(--border);
     }
+    .summary-state:checked ~ .subbar { display: flex; }
     .subbar .lead { font-weight: 600; color: var(--fg); white-space: nowrap; }
     .subbar .txt { color: var(--muted); }
 
@@ -175,6 +206,7 @@ export function planFramePage(plan: Plan, view: FrameView, rawSrc: string): stri
 </head>
 <body>
   <header class="chrome">
+    ${summaryState}
     <div class="bar">
       <a class="crumb home" href="/">Plans</a>
       <span class="crumb sep">/</span>
@@ -182,11 +214,13 @@ export function planFramePage(plan: Plan, view: FrameView, rawSrc: string): stri
       <span class="spacer"></span>
       ${statusZone}
       ${action}
+      ${summaryButton}
       <a class="btn ghost" href="/p/${slug}/versions">Versions</a>
     </div>
     ${subbar}
   </header>
   <iframe src="${esc(rawSrc)}" title="${esc(plan.title)}"></iframe>
+  ${summaryScript}
 </body>
 </html>`;
 }

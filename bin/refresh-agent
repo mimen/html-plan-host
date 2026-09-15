@@ -20,7 +20,6 @@ import re
 import shutil
 import subprocess
 import tempfile
-import urllib.request
 
 HOME = Path.home()
 DATA = HOME / '.local/share/html-plan-host'
@@ -29,7 +28,8 @@ CURRENT = DATA / 'agent-current'
 LAUNCH_AGENTS = HOME / 'Library/LaunchAgents'
 HUB_RUN = HOME / 'Programming/Repos/hub/bin/run'
 LABEL = 'com.mimen.html-plan-host.agent-refresh'
-TIP_URL = 'https://api.github.com/repos/mimen/html-plan-host/commits/main'
+REPO_URL = 'https://github.com/mimen/html-plan-host.git'
+GIT = '/usr/bin/git'
 PYTHON = '/usr/bin/python3'
 COMMIT = re.compile('[0-9a-f]{40}')
 DOMAIN = 'gui/{}'.format(os.getuid())
@@ -64,16 +64,20 @@ def installed_revision():
 
 
 def fetch_tip():
-    request = urllib.request.Request(TIP_URL, headers={'User-Agent': 'html-plan-host-refresh',
-                                                       'Accept': 'application/vnd.github.sha'})
-    return urllib.request.urlopen(request, timeout=30).read().decode('utf-8', 'replace').strip()
+    # The git transport rather than the API: no media type, no unauthenticated rate
+    # limit, and the same path the tarball install already depends on. The commits
+    # endpoint returned 504 on two hosts for minutes while ls-remote stayed exact.
+    done = subprocess.run([GIT, 'ls-remote', REPO_URL, 'refs/heads/main'], capture_output=True, timeout=60)
+    if done.returncode:
+        raise OSError(done.stderr.decode('utf-8', 'replace').strip()[-200:] or 'exited ' + str(done.returncode))
+    return done.stdout.decode('utf-8', 'replace').split('\t')[0].strip()
 
 
 def resolve_tip():
     try:
         body = fetch_tip()
-    except OSError as failure:
-        raise SystemExit('resolve: cannot reach {} ({})'.format(TIP_URL, failure))
+    except (OSError, subprocess.SubprocessError) as failure:
+        raise SystemExit('resolve: cannot read main from {} ({})'.format(REPO_URL, failure))
     if not COMMIT.fullmatch(body):
         raise SystemExit('resolve: main did not resolve to a commit sha: ' + body[:200])
     return body

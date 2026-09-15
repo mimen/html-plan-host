@@ -44,3 +44,18 @@ test("Nocturne theme follows the OS and ships its skeleton", () => {
   expect(nocturneText).toContain("IntersectionObserver");
   expect(nocturneText).toContain("nav.toc a.current");
 });
+
+const skillText = readFileSync(
+  join(import.meta.dir, "../skills/html-plan/SKILL.md"),
+  "utf8",
+);
+
+const squish = (value: string) => value.replace(/\s+/g, " ");
+
+// The default was previously unstated, so every plan improvised a theme.
+test("Nocturne is the stated default, in both entry points", () => {
+  expect(squish(skillText)).toMatch(/\*\*Nocturne\*\* is the default/);
+  expect(squish(text)).toMatch(/\*\*Nocturne\*\* is the default/);
+  expect(squish(skillText)).not.toMatch(/\*\*Margin\*\* is the default/);
+  expect(squish(text)).not.toMatch(/\*\*Margin\*\* is the default/);
+});

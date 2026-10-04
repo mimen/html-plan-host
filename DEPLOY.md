@@ -4,6 +4,50 @@ deployment_production_trigger: merge to main
 deployment_branch_command: bun run dev with a separate database and port
 deployment_verify_command: bin/mini verify
 deployment_last_assessed: 2026-09-07
+deployment_targets:
+  - component: server
+    where: mac-mini
+    detail: launchd com.mimen.html-plan-host serves the personal instance on loopback port 3490 behind private Tailscale Serve HTTPS port 8490.
+    url: https://milads-mac-mini.taild31e9a.ts.net:8490
+  - component: server
+    where: heroku
+    detail: Work app milad-plans uses the heroku.yml container and documented automatic deployment from main.
+  - component: database
+    where: mac-mini
+    detail: launchd com.mimen.html-plan-host.postgres runs the dedicated Postgres 17 cluster on loopback port 5490.
+  - component: database
+    where: heroku
+    detail: The work deployment uses the Heroku Postgres addon described in README.md.
+  - component: cli
+    where: m5-laptop
+    detail: ~/.local/bin/html-plan runs the pinned package through ~/.local/share/html-plan-host/agent-current.
+  - component: cli
+    where: m3-laptop
+    detail: ~/.local/bin/html-plan runs the pinned package through ~/.local/share/html-plan-host/agent-current.
+  - component: cli
+    where: mac-mini
+    detail: ~/.local/bin/html-plan runs the pinned package through ~/.local/share/html-plan-host/agent-current.
+  - component: agent-skills
+    where: m5-laptop
+    detail: html-plan and html-plan-push link from ~/.agents/skills and ~/.codex/skills to the pinned agent-current package.
+  - component: agent-skills
+    where: m3-laptop
+    detail: html-plan and html-plan-push link from ~/.agents/skills and ~/.codex/skills to the pinned agent-current package.
+  - component: agent-skills
+    where: mac-mini
+    detail: html-plan and html-plan-push link from ~/.agents/skills and ~/.codex/skills to the pinned agent-current package.
+  - component: agent-refresh
+    where: m5-laptop
+    detail: Hourly launchd com.mimen.html-plan-host.agent-refresh runs through the laptop hub reporter.
+  - component: agent-refresh
+    where: m3-laptop
+    detail: Hourly launchd com.mimen.html-plan-host.agent-refresh runs through the m3 hub reporter.
+  - component: agent-refresh
+    where: mac-mini
+    detail: Hourly launchd com.mimen.html-plan-host.agent-refresh runs through the mini hub reporter.
+  - component: deploy-watch
+    where: mac-mini
+    detail: launchd com.mimen.html-plan-host.deploy-watch fetches main and activates immutable server releases.
 ---
 
 # Deployment

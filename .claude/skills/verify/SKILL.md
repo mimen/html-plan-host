@@ -20,6 +20,7 @@ VERIFY_TAILNET=1 .claude/skills/verify/verify.sh up   # also for the T3 preview 
 - Starts `bun run src/index.ts` from this checkout on `127.0.0.1:5513` under `env -i`, so no shell or user environment leaks in.
 - Generates a fresh `SESSION_SECRET` and `PUBLISH_TOKEN`. It sets no Heroku OAuth variables, so reads are open and no login identity is needed. The OAuth gate needs a registered Heroku client per callback URL, so it stays out of local proof.
 - Sets `APP_REVISION` to `git rev-parse HEAD`, with a `-dirty` suffix when the tree has changes.
+- Names the server, forwarder, and Postgres in argv as `html-plan-host:verify@<run>`, `html-plan-host:verify-forwarder@<run>`, and `html-plan-host:verify-postgres@<run>`.
 - Records each process's PID, full argv, and `ps` start time, plus the Postgres data directory, the token, and the URL, in `/tmp/hph-verify/state.env`, then runs `doctor`.
 
 If any step fails, an exit trap stops only the resources already recorded and removes the run directory. If that rollback is refused, the state stays for `down` to retry. `VERIFY_FAULT=initdb|pg|server|forwarder` makes `up` fail after that stage, which proves the rollback path.

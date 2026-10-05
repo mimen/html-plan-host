@@ -9,6 +9,8 @@ SKILL_DIR=${0:A:h}
 REPO=${SKILL_DIR:h:h:h}
 RUN=${${VERIFY_RUN:-/tmp/hph-verify}:a}
 STATE=$RUN/state.env
+RUN_REF=$(print -r -- ${RUN:t} | tr A-Z a-z | sed -E 's/[^a-z0-9]+/-/g; s/^-+|-+$//g')
+[[ -n $RUN_REF ]] || { print -u2 "FAIL: run name has no identity segment"; exit 1; }
 SAFE_PATH=/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin
 
 fail() { print -u2 "FAIL: $*"; exit 1 }
@@ -60,7 +62,7 @@ up() {
   record PG_DATA $RUN/pg
   initdb -D $PG_DATA -U verify --auth=trust >$RUN/initdb.log
   fault initdb
-  pg_ctl -D $PG_DATA -o "-p $pg_port -k $RUN -c listen_addresses=127.0.0.1" -l $RUN/pg.log -w start >/dev/null
+  pg_ctl -D $PG_DATA -o "-p $pg_port -k $RUN -c listen_addresses=127.0.0.1 -c cluster_name=html-plan-host:verify-postgres@$RUN_REF" -l $RUN/pg.log -w start >/dev/null
   local pgpid=$(head -1 $PG_DATA/postmaster.pid)
   record PG_PID $pgpid
   record PG_ARGS "$(pargs $pgpid)"
@@ -70,16 +72,16 @@ up() {
   record TOKEN $(openssl rand -hex 32)
   record REVISION $(revision)
   cd $REPO
-  spawn SERVER $RUN/server.log "bun run $REPO/src/index.ts" env -i PATH=$SAFE_PATH HOME=$RUN \
+  spawn SERVER $RUN/server.log "bun run $REPO/src/index.ts --identity html-plan-host:verify@$RUN_REF" env -i PATH=$SAFE_PATH HOME=$RUN \
     DATABASE_URL=postgres://verify@127.0.0.1:$pg_port/html_plan_host_verify DATABASE_SSL=disable \
     SESSION_SECRET=$(openssl rand -hex 32) PUBLISH_TOKEN=$TOKEN \
     HOST=127.0.0.1 PORT=$app_port APP_REVISION=$REVISION THEME=zinc \
-    bun run $REPO/src/index.ts
+    bun run $REPO/src/index.ts --identity html-plan-host:verify@$RUN_REF
   for i in {1..50}; do curl -fsS $URL/healthz >/dev/null 2>&1 && break; sleep 0.2; done
   fault server
   if [[ -n $tsip ]]; then
     record TS_IP $tsip
-    spawn FWD $RUN/forward.log "bun $SKILL_DIR/tailnet-forward.ts $tsip $app_port" bun $SKILL_DIR/tailnet-forward.ts $tsip $app_port
+    spawn FWD $RUN/forward.log "bun $SKILL_DIR/tailnet-forward.ts $tsip $app_port --identity html-plan-host:verify-forwarder@$RUN_REF" bun $SKILL_DIR/tailnet-forward.ts $tsip $app_port --identity html-plan-host:verify-forwarder@$RUN_REF
     for i in {1..25}; do [[ $(listener $app_port $tsip) == $FWD_PID ]] && break; sleep 0.2; done
   fi
   fault forwarder
@@ -109,7 +111,7 @@ doctor() {
   local code=$(curl -s -o /dev/null -w '%{http_code}' $URL/)
   [[ $code == 200 ]] || fail "GET / returned $code (auth must be off on the verify instance)"
   print "OK server pid=$SERVER_PID lstart='$SERVER_LSTART' argv='$SERVER_ARGS' cwd=$REPO port=$APP_PORT"
-  print "OK postgres pid=$PG_PID lstart='$PG_LSTART' data=$PG_DATA port=$PG_PORT"
+  print "OK postgres pid=$PG_PID lstart='$PG_LSTART' argv='$PG_ARGS' data=$PG_DATA port=$PG_PORT"
   print "OK revision=$REVISION url=$URL auth=open(no OAuth vars)"
   if [[ -n ${FWD_PID:-} ]]; then
     [[ $(listener $APP_PORT $TS_IP) == $FWD_PID ]] || fail "tailnet $TS_IP:$APP_PORT not owned by forwarder $FWD_PID"

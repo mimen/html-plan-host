@@ -1,0 +1,2 @@
+# A repo-only symlink for agent skill discovery; bin/bootstrap-agent rejects links in the package archive.
+/.agents export-ignore

@@ -54,12 +54,24 @@ interface HerokuAccount {
   email?: string;
 }
 
+function safeReturnTo(value: string): string {
+  const base = "http://return.invalid";
+  try {
+    const url = new URL(value, base);
+    if (url.origin !== base) return "/";
+    return `${url.pathname}${url.search}${url.hash}`;
+  } catch {
+    return "/";
+  }
+}
+
 export async function handleCallback(c: Context): Promise<CallbackResult> {
   const raw = getCookie(c, OAUTH_STATE_COOKIE);
   deleteCookie(c, OAUTH_STATE_COOKIE, { path: "/" });
 
   const [expectedState, encodedReturn] = (raw ?? "").split(":");
-  const returnTo = encodedReturn ? Buffer.from(encodedReturn, "base64url").toString() : "/";
+  const decoded = encodedReturn ? Buffer.from(encodedReturn, "base64url").toString() : "/";
+  const returnTo = safeReturnTo(decoded);
 
   const state = c.req.query("state");
   const code = c.req.query("code");

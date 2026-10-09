@@ -40,6 +40,7 @@ test("OAuth returnTo stays on this site", () => {
       external: await locationFor("https://evil.example/phish"),
       protocolRelative: await locationFor("//evil.example"),
       backslash: await locationFor("/\\\\evil.example"),
+      dotSegment: await locationFor("/.//evil.example"),
       local: await locationFor("/p/mia-model?raw=1"),
     }));
   `,
@@ -51,6 +52,7 @@ test("OAuth returnTo stays on this site", () => {
     external: "/",
     protocolRelative: "/",
     backslash: "/",
+    dotSegment: "/",
     local: "/p/mia-model?raw=1",
   });
 });

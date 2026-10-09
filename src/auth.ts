@@ -58,7 +58,8 @@ function safeReturnTo(value: string): string {
   const base = "http://return.invalid";
   try {
     const url = new URL(value, base);
-    if (url.origin !== base) return "/";
+    // Dot segments can normalize "/.//host" to "//host", which a browser reads as another origin.
+    if (url.origin !== base || url.pathname.startsWith("//")) return "/";
     return `${url.pathname}${url.search}${url.hash}`;
   } catch {
     return "/";

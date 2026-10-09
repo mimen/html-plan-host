@@ -36,20 +36,17 @@ push options:
 
 push writes the DRAFT only. Publish a version from the top bar in the web UI.`;
 
-function parseArgs(argv) {
+// Every option takes a value, and an unknown or valueless one is an error: an
+// ignored --slug would create a new plan instead of updating the draft.
+function parseArgs(argv, allowed) {
   const args = {};
-  for (let i = 0; i < argv.length; i++) {
+  for (let i = 0; i < argv.length; i += 2) {
     const key = argv[i];
-    if (key.startsWith("--")) {
-      const name = key.slice(2);
-      const next = argv[i + 1];
-      if (next && !next.startsWith("--")) {
-        args[name] = next;
-        i++;
-      } else {
-        args[name] = true;
-      }
-    }
+    const name = key.startsWith("--") ? key.slice(2) : "";
+    if (!allowed.includes(name)) die(`unknown option "${key}". Run "html-plan --help".`);
+    const value = argv[i + 1];
+    if (value === undefined || value.startsWith("--")) die(`${key} needs a value`);
+    args[name] = value;
   }
   return args;
 }
@@ -169,9 +166,9 @@ if (!command || command === "help" || command === "--help" || command === "-h") 
 }
 
 if (command === "push") {
-  await push(parseArgs(rest));
+  await push(parseArgs(rest, ["file", "slug", "title", "description", "summary", "url", "token"]));
 } else if (command === "baseline") {
-  await baseline(parseArgs(rest));
+  await baseline(parseArgs(rest, ["slug", "url", "token"]));
 } else {
   die(`unknown command "${command}". Run "html-plan --help".`);
 }

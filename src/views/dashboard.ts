@@ -32,7 +32,7 @@ export function dashboardPage(plans: PlanSummary[], email: string): string {
         </div>`;
         })
         .join("")}</div>`
-    : `<div class="empty">No plans yet. Publish one with <code>bin/publish.mjs</code> and it'll show up here.</div>`;
+    : `<div class="empty">No plans yet. Push one with <code>html-plan push</code> and it'll show up here.</div>`;
 
   const identity = email
     ? `Signed in as ${esc(email)} &middot; <a href="/auth/logout">sign out</a>`

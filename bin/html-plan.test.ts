@@ -65,3 +65,17 @@ test("CLI creates a draft and reads the baseline using a configured host", async
     server.stop(true);
   }
 });
+
+test("unknown, stray, and valueless options fail before any request", async () => {
+  const data = fixture("https://personal.example");
+  for (const args of [
+    ["push", "--file", data.html, "--slgu", "existing"],
+    ["push", "--file", data.html, "--dry-run"],
+    ["push", "--file", data.html, "--slug", "--title", "T"],
+    ["baseline", "fixture"],
+  ]) {
+    const result = await cli(data.config, args, { PLAN_HOST_TOKEN: "fixture-token" });
+    expect(result.code).toBe(1);
+    expect(result.error).toMatch(/unknown option|needs a value/);
+  }
+});

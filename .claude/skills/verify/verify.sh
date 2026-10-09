@@ -62,7 +62,8 @@ up() {
   record PG_DATA $RUN/pg
   initdb -D $PG_DATA -U verify --auth=trust >$RUN/initdb.log
   fault initdb
-  pg_ctl -D $PG_DATA -o "-p $pg_port -k $RUN -c listen_addresses=127.0.0.1 -c cluster_name=html-plan-host:verify-postgres@$RUN_REF" -l $RUN/pg.log -w start >/dev/null
+  # Postgres aborts at startup on macOS when the caller has no locale set.
+  LC_ALL=C pg_ctl -D $PG_DATA -o "-p $pg_port -k $RUN -c listen_addresses=127.0.0.1 -c cluster_name=html-plan-host:verify-postgres@$RUN_REF" -l $RUN/pg.log -w start >/dev/null
   local pgpid=$(head -1 $PG_DATA/postmaster.pid)
   record PG_PID $pgpid
   record PG_ARGS "$(pargs $pgpid)"

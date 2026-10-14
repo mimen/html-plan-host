@@ -118,6 +118,20 @@ describe("raw plan isolation", () => {
   });
 });
 
+describe("push slug", () => {
+  test.each(["../auth/logout", "ok\r\nLocation: https://evil.example", "a/b", "..", "slug with spaces"])(
+    "rejects %j before writing a draft",
+    async (slug) => {
+      const response = await push({ title: "Test plan", html, slug });
+      expect(response.status).toBe(400);
+      expect(await response.json()).toEqual({
+        error: "slug must be letters, digits, and single hyphens (max 80 characters)",
+      });
+      expect(pushDraft).not.toHaveBeenCalled();
+    },
+  );
+});
+
 describe("push description limit", () => {
   test("rejects a 151-character description naming the limit and the actual length", async () => {
     const response = await push({ title: "Test plan", html, description: "d".repeat(151) });

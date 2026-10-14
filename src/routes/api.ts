@@ -5,6 +5,7 @@ import { baseUrl } from "../auth.ts";
 import { getLatestPublishedVersion, getPlanBySlug, pushDraft } from "../plans.ts";
 
 const DESCRIPTION_MAX_LENGTH = 150;
+const SLUG_MAX_LENGTH = 80;
 
 export const apiRoutes = new Hono();
 
@@ -73,8 +74,30 @@ apiRoutes.post("/plans", async (c) => {
     );
   }
 
+  // A slug is one URL segment. "../auth/logout" becomes the logout link, and a
+  // newline makes the publish redirect throw instead of returning a location.
+  let slug: string | undefined;
+  if (typeof body.slug === "string") {
+    const trimmed = body.slug.trim();
+    if (
+      trimmed &&
+      (trimmed.length > SLUG_MAX_LENGTH || !/^[A-Za-z0-9]+(?:-[A-Za-z0-9]+)*$/.test(trimmed))
+    ) {
+      return c.json(
+        { error: `slug must be letters, digits, and single hyphens (max ${SLUG_MAX_LENGTH} characters)` },
+        400,
+      );
+    }
+    slug = trimmed || undefined;
+  } else if (body.slug != null) {
+    return c.json(
+      { error: `slug must be letters, digits, and single hyphens (max ${SLUG_MAX_LENGTH} characters)` },
+      400,
+    );
+  }
+
   const result = await pushDraft({
-    slug: body.slug?.trim() || undefined,
+    slug,
     title,
     description,
     html,

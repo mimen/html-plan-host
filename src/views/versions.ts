@@ -200,6 +200,12 @@ export function planFramePage(plan: Plan, view: FrameView, rawSrc: string, summa
     .subbar .lead { font-weight: 600; color: var(--fg); white-space: nowrap; }
     .subbar .txt { color: var(--muted); }
 
+    @media (max-width: 640px) {
+      .bar { height: auto; min-height: 44px; flex-wrap: wrap; padding: 8px 12px; row-gap: 8px; }
+      .crumb.title { flex: 1 1 calc(100% - 90px); min-width: 0; overflow-wrap: anywhere; }
+      .bar .spacer { display: none; }
+    }
+
     iframe { flex: 1 1 auto; width: 100%; border: 0; display: block; background: var(--iframe-bg); }
   </style>
   <style>${themeCss(config.theme)}</style>

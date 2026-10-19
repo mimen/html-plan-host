@@ -109,7 +109,10 @@ describe("raw plan isolation", () => {
 
   test("trusted plan wrapper keeps its publish form and navigation outside the sandbox", async () => {
     const response = await app.request("/p/test-plan/draft");
-    expect(response.headers.get("Content-Security-Policy")).toBeNull();
+    // A tailnet page can iframe this chrome. Auth is off there, and a click on the
+    // framed Publish button is a same-origin POST, so the Origin check allows it.
+    expect(response.headers.get("Content-Security-Policy")).toBe("frame-ancestors 'none'");
+    expect(response.headers.get("X-Frame-Options")).toBe("DENY");
     const body = await response.text();
     expect(body).toContain('method="post" action="/p/test-plan/publish"');
     expect(body).toContain('href="/p/test-plan/versions"');

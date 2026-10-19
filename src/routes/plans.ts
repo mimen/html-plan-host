@@ -29,6 +29,17 @@ function serveHtml(c: Context, html: string): Response {
 const isRaw = (c: Context) => c.req.query("raw") !== undefined;
 const summaryOpen = (c: Context) => getCookie(c, SUMMARY_COOKIE) === "1";
 
+// The raw document is framed by this app. The chrome around it is not: with auth
+// off, a foreign page can iframe the publish bar and the click is a same-origin POST.
+planRoutes.use("*", async (c, next) => {
+  await next();
+  if (isRaw(c)) return;
+  const type = c.res.headers.get("content-type") ?? "";
+  if (!type.includes("text/html")) return;
+  c.res.headers.set("Content-Security-Policy", "frame-ancestors 'none'");
+  c.res.headers.set("X-Frame-Options", "DENY");
+});
+
 planRoutes.get("/", async (c) => {
   const plans = await listPlans();
   return c.html(dashboardPage(plans, c.get("email")));

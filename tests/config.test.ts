@@ -83,6 +83,36 @@ test("Bun binds the exported server options to loopback", () => {
   expect(JSON.parse(child.stdout.toString())).toEqual({ hostname: "127.0.0.1", status: 200, body: "ok" });
 });
 
+test("a question mark in an allow-list pattern is a literal character", () => {
+  const child = Bun.spawnSync([process.execPath, "--no-env-file", "--eval", `
+    import { isAllowedEmail } from "./src/config.ts";
+    console.log(JSON.stringify({
+      shorter: isAllowedEmail("o@example.com"),
+      adjacent: isAllowedEmail("fo@example.com"),
+      inserted: isAllowedEmail("fxo@example.com"),
+      literal: isAllowedEmail("f?o@example.com"),
+      leading: isAllowedEmail("?@example.com"),
+      star: isAllowedEmail("ada@other.test"),
+      starMiss: isAllowedEmail("ada@example.com"),
+    }));
+  `], {
+    cwd,
+    env: { ...env, ALLOWED_EMAILS: "f?o@example.com,?@example.com,*@other.test" },
+    stdout: "pipe",
+    stderr: "pipe",
+  });
+  expect(child.exitCode, child.stderr.toString()).toBe(0);
+  expect(JSON.parse(child.stdout.toString())).toEqual({
+    shorter: false,
+    adjacent: false,
+    inserted: false,
+    literal: true,
+    leading: true,
+    star: true,
+    starMiss: false,
+  });
+});
+
 test("publish Origin uses the Heroku forwarded protocol when BASE_URL is unset", () => {
   const child = Bun.spawnSync([process.execPath, "--no-env-file", "--eval", `
     import { Hono } from "hono";

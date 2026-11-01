@@ -102,6 +102,11 @@ export interface PushInput {
   updatedBy: string;
 }
 
+// Identifies the draft a page rendered, so Publish mints that draft and not a later push.
+export function draftRevisionOf(plan: Pick<Plan, "draft_updated_at">): string {
+  return String(plan.draft_updated_at?.getTime() ?? "");
+}
+
 // Token-facing write. Creates the plan on first push (draft only, nothing
 // published yet) or overwrites the existing draft. Never touches published
 // versions, so an agent cannot mint a milestone.
@@ -140,14 +145,17 @@ export async function pushDraft(input: PushInput): Promise<PushResult> {
 
 // Human-facing action. Snapshots the current draft as the next immutable
 // version and marks the draft clean. Returns null when there is nothing to
-// publish (no draft) or the draft is already published (not dirty).
+// publish (no draft), the draft is already published (not dirty), or an agent
+// pushed after the user loaded the page (draftRevision no longer matches).
 export async function publishDraft(
   planId: string,
   publishedBy: string,
+  draftRevision: string,
 ): Promise<{ version: number } | null> {
   return sql.begin(async (tx) => {
     const [plan] = await tx<Plan[]>`select * from plans where id = ${planId} for update`;
     if (!plan || plan.draft_html === null || !plan.draft_dirty) return null;
+    if (draftRevisionOf(plan) !== draftRevision) return null;
 
     const [row] = await tx<{ next: number }[]>`
       select coalesce(max(version), 0) + 1 as next from plan_versions where plan_id = ${planId}

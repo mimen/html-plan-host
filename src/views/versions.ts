@@ -65,7 +65,7 @@ export function versionsPage(plan: Plan, versions: PlanVersion[]): string {
 
 export type FrameView =
   | { kind: "version"; version: number; latest: number; dirty: boolean; publishedAt: Date; summary: string | null }
-  | { kind: "draft"; dirty: boolean; latestPublished: number | null; updatedAt: Date | null; summary: string | null };
+  | { kind: "draft"; dirty: boolean; revision: string; latestPublished: number | null; updatedAt: Date | null; summary: string | null };
 
 // Wrapper page: a thin top bar plus the plan HTML in an untouched iframe below.
 // Layout is three stable zones. Left is the breadcrumb (the only bold element).
@@ -105,7 +105,7 @@ export function planFramePage(plan: Plan, view: FrameView, rawSrc: string, summa
     statusZone = `<span class="state"><span class="dot ${dot}"></span>Draft <span class="sub">${sub}</span></span>${ts}`;
 
     if (view.dirty) {
-      action = `<form method="post" action="/p/${slug}/publish" style="margin:0"><button type="submit" class="btn primary">Publish version</button></form>`;
+      action = `<form method="post" action="/p/${slug}/publish" style="margin:0"><input type="hidden" name="draft" value="${esc(view.revision)}"><button type="submit" class="btn primary">Publish version</button></form>`;
     }
     summaryLead = view.latestPublished ? `Since v${view.latestPublished}` : "Pending";
     summaryText = view.summary;

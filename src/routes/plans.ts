@@ -3,6 +3,7 @@ import type { Context } from "hono";
 import { getCookie } from "hono/cookie";
 import { requireBrowserPublish, requireSession } from "../auth.ts";
 import {
+  draftRevisionOf,
   getLatestPublishedVersion,
   getPlanBySlug,
   getVersion,
@@ -87,6 +88,7 @@ planRoutes.get("/p/:slug/draft", async (c) => {
       {
         kind: "draft",
         dirty: plan.draft_dirty,
+        revision: draftRevisionOf(plan),
         latestPublished: latest?.version ?? null,
         updatedAt: plan.draft_updated_at,
         summary: plan.draft_summary,
@@ -101,8 +103,10 @@ planRoutes.get("/p/:slug/draft", async (c) => {
 planRoutes.post("/p/:slug/publish", requireBrowserPublish, async (c) => {
   const plan = await getPlanBySlug(c.req.param("slug"));
   if (!plan) return c.notFound();
-  await publishDraft(plan.id, c.get("email") || "you");
-  return c.redirect(`/p/${plan.slug}`);
+  const { draft } = await c.req.parseBody();
+  const published = await publishDraft(plan.id, c.get("email") || "you", typeof draft === "string" ? draft : "");
+  // Unpublished means the draft moved under the user; show them the new one.
+  return c.redirect(published ? `/p/${plan.slug}` : `/p/${plan.slug}/draft`);
 });
 
 planRoutes.get("/p/:slug/versions", async (c) => {

@@ -23,13 +23,14 @@ const version: PlanVersion = {
   id: "test-version-id", plan_id: plan.id, version: 1, title: plan.title,
   html, summary: null, published_by: "test@example.com", created_at: new Date(0),
 };
-const publishDraft = mock(async () => version);
+const publishDraft = mock(async (_id: string, _by: string, _revision: string): Promise<{ version: number } | null> => version);
 const getPlanBySlug = mock(async () => plan);
 const pushDraft = mock(async (_input: PushInput): Promise<PushResult> => {
   throw new Error("Unexpected draft write");
 });
 mock.module("../src/plans.ts", () => ({
   getPlanBySlug, publishDraft, pushDraft,
+  draftRevisionOf: (p: Plan) => String(p.draft_updated_at?.getTime() ?? ""),
   getLatestPublishedVersion: async () => version,
   getVersion: async () => version,
   listPlans: async () => [],
@@ -50,9 +51,9 @@ beforeEach(() => {
   pushDraft.mockClear();
 });
 
-function publish(headers: Record<string, string>): Promise<Response> {
+function publish(headers: Record<string, string>, body = "draft=0"): Promise<Response> {
   return Promise.resolve(app.request("https://internal.test/p/test-plan/publish", {
-    method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded", ...headers },
+    method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded", ...headers }, body,
   }));
 }
 
@@ -83,7 +84,14 @@ describe("open-read publish guard on the real route", () => {
     const response = await publish({ Origin: testEnv.BASE_URL });
     expect(response.status).toBe(302);
     expect(response.headers.get("Location")).toBe("/p/test-plan");
-    expect(publishDraft).toHaveBeenCalledWith(plan.id, "you");
+    expect(publishDraft).toHaveBeenCalledWith(plan.id, "you", "0");
+  });
+
+  test("a draft that moved before the click sends the user back to it", async () => {
+    publishDraft.mockImplementationOnce(async () => null);
+    const response = await publish({ Origin: testEnv.BASE_URL }, "draft=-1");
+    expect(response.headers.get("Location")).toBe("/p/test-plan/draft");
+    expect(publishDraft).toHaveBeenCalledWith(plan.id, "you", "-1");
   });
 
   test("forged forwarded headers cannot override configured BASE_URL", async () => {
@@ -115,6 +123,7 @@ describe("raw plan isolation", () => {
     expect(response.headers.get("X-Frame-Options")).toBe("DENY");
     const body = await response.text();
     expect(body).toContain('method="post" action="/p/test-plan/publish"');
+    expect(body).toContain('<input type="hidden" name="draft" value="0">');
     expect(body).toContain('href="/p/test-plan/versions"');
     expect(body).toContain('src="/p/test-plan/draft?raw=1"');
     expect(body).not.toContain("Interactive plan");

@@ -144,7 +144,8 @@ export const requireSession: MiddlewareHandler = async (c, next) => {
     return next();
   }
   const session = verifySessionCookie(getCookie(c, SESSION_COOKIE));
-  if (!session) return startLogin(c, c.req.path);
+  // Re-check the allow-list: the cookie outlives a change to ALLOWED_EMAILS.
+  if (!session || !isAllowedEmail(session.email)) return startLogin(c, c.req.path);
   c.set("email", session.email);
   await next();
 };

@@ -56,3 +56,29 @@ test("OAuth returnTo stays on this site", () => {
     local: "/p/mia-model?raw=1",
   });
 });
+
+// Sessions are stateless, so the allow-list must be checked on every request:
+// dropping an address from ALLOWED_EMAILS has to end that person's access.
+test("a session for an address no longer allowed goes back to sign-in", () => {
+  const child = Bun.spawnSync(
+    [
+      process.execPath,
+      "--no-env-file",
+      "--eval",
+      `
+    const { app } = await import("./src/app.ts");
+    const { createSessionCookie } = await import("./src/session.ts");
+    const res = await app.request("http://plans.example.test/", {
+      headers: { cookie: "hph_session=" + createSessionCookie("removed@example.com") },
+    });
+    console.log(JSON.stringify({ status: res.status, location: res.headers.get("location") }));
+    process.exit(0);
+  `,
+    ],
+    { cwd, env, stdout: "pipe", stderr: "pipe" },
+  );
+  expect(child.exitCode, child.stderr.toString()).toBe(0);
+  const result = JSON.parse(child.stdout.toString());
+  expect(result.status).toBe(302);
+  expect(result.location).toStartWith("https://id.heroku.com/oauth/authorize");
+});

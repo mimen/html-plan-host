@@ -124,10 +124,13 @@ def tick():
             run('sync', [GIT, '-C', CLONE, 'merge', '--ff-only', 'origin/main'])
         if observed == previous.get('deployed_sha'):
             current = live_sha()
-            if current and current != observed:
+            if current == observed:
+                return write_status(previous, 'healthy', observed)
+            # A different sha is a manual rollback. A missing or unreadable link is
+            # down: fall through and activate main again.
+            if current:
                 return write_status(previous, 'diverged', observed, step='compare',
                                     error='current is {} but origin/main is {}; leaving the manual deploy in place'.format(current, observed))
-            return write_status(previous, 'healthy', observed)
         write_status(previous, 'deploying', observed, step='stage')
         release = stage_release(observed)
         write_status(previous, 'deploying', observed, step='activate')
@@ -151,8 +154,16 @@ def demo():
     def fake_run(step, args, input=None):
         if step in ('resolve', 'head'):
             return (remote['sha'] + '\n').encode()
-        if step == 'activate' and activate_fails['now']:
-            raise StepError('activate', 'activate: exited 1\nBlockingIOError: [Errno 35] Resource temporarily unavailable')
+        if step == 'activate':
+            if activate_fails['now']:
+                raise StepError('activate', 'activate: exited 1\nBlockingIOError: [Errno 35] Resource temporarily unavailable')
+            sha = str(args[-1])
+            link = ROOT / 'current'
+            if link.is_symlink() or link.is_file():
+                link.unlink()
+            elif link.exists():
+                shutil.rmtree(link)
+            link.symlink_to(RELEASES / sha)
         return b''
 
     run = fake_run
@@ -175,12 +186,22 @@ def demo():
         assert idle['deployed_at'] == deployed['deployed_at'], idle
         assert idle['checked_at'] >= deployed['checked_at'], idle
 
+        # A recorded deploy whose current link is gone is down. Repair it.
+        # Reporting healthy leaves the site down until main moves.
+        (ROOT / 'current').unlink()
+        repaired = tick()
+        assert repaired['status'] == 'healthy', repaired
+        assert repaired['deployed_sha'] == first_sha, repaired
+        assert (ROOT / 'current' / '.release-revision').read_text().strip() == first_sha, repaired
+
         remote['sha'] = second_sha
         moved = tick()
         assert moved['deployed_sha'] == second_sha, moved
         assert (RELEASES / second_sha / '.release-revision').read_text() == second_sha + '\n'
 
         # A manual rollback moved `current`. Report it; do not redeploy over it.
+        if (ROOT / 'current').is_symlink():
+            (ROOT / 'current').unlink()
         (ROOT / 'current').mkdir(parents=True, exist_ok=True)
         (ROOT / 'current' / '.release-revision').write_text(first_sha + '\n')
         diverged = tick()

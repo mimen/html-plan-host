@@ -27,6 +27,26 @@ describe("withT3Theme", () => {
     expect(withT3Theme(page)).toBe(page);
   });
 
+  test.each([
+    "body > header{background:var(--card)}",
+    "body .hero { background: var(--muted) }",
+    "html[data-x] main{background-color:var(--card)}",
+    ":root{--background:#fff}",
+  ])("a selector that only mentions the canvas does not opt out: %s", (css) => {
+    const page = `<!doctype html><html><head><style>${css}</style></head><body></body></html>`;
+    expect(withT3Theme(page)).toContain(MARK);
+  });
+
+  test("a qualified canvas selector still opts out", () => {
+    const page = "<html><head><style>p{color:red}\nbody.dark, html{background:#000}</style></head></html>";
+    expect(withT3Theme(page)).toBe(page);
+  });
+
+  test("a themed page is not themed twice", () => {
+    const once = withT3Theme("<html><head></head></html>");
+    expect(withT3Theme(once)).toBe(once);
+  });
+
   test("a background on an inner element does not opt out", () => {
     const page = "<html><head><style>.card{background:var(--card)} tbody td{color:red}</style></head></html>";
     expect(withT3Theme(page)).toContain(MARK);

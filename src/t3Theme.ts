@@ -17,11 +17,16 @@ const HOST = "@media (min-width:800px){html{padding:32px 24px}body{max-width:114
 const STYLE = `<style id="t3-theme">${DARK}@media (prefers-color-scheme: light){${LIGHT}}${BASE}${HOST}</style>`;
 
 // A page that paints its own canvas (the legacy plan themes) keeps it untouched.
-const OWN_CANVAS = /(?:^|[\s,}>])(?:html|body|:root)\b[^{}]*\{[^}]*\bbackground(?:-color)?\s*:/i;
+// The selector must be the canvas itself: `body > header{background:...}` paints a header.
 const STYLE_BLOCK = /<style\b[^>]*>([\s\S]*?)<\/style\s*>/gi;
+const RULE = /([^{}]+)\{([^{}]*)\}/g;
+const CANVAS = /^(?:html|body|:root)(?:[.#[:][^\s>+~]*)?$/i;
+const PAINTS = /(?:^|[\s;])background(?:-color)?\s*:/i;
 
 export function paintsOwnCanvas(html: string): boolean {
-  for (const [, css] of html.matchAll(STYLE_BLOCK)) if (OWN_CANVAS.test(css ?? "")) return true;
+  for (const [, css] of html.matchAll(STYLE_BLOCK))
+    for (const [, selectors, body] of (css ?? "").replace(/\/\*[\s\S]*?\*\//g, "").matchAll(RULE))
+      if (PAINTS.test(body ?? "") && selectors!.split(",").some((s) => CANVAS.test(s.trim()))) return true;
   return false;
 }
 

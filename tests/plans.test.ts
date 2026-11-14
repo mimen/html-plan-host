@@ -112,7 +112,9 @@ describe("raw plan isolation", () => {
     expect(response.status).toBe(200);
     expect(response.headers.get("Content-Type")).toBe("text/html; charset=utf-8");
     expect(response.headers.get("Content-Security-Policy")).toBe("sandbox allow-scripts");
-    expect(await response.text()).toBe(html);
+    const body = await response.text();
+    expect(body.replace(/<style id="t3-theme">[\s\S]*?<\/style>/, "")).toBe(html);
+    expect(body).toContain('<style id="t3-theme">');
   });
 
   test("trusted plan wrapper keeps its publish form and navigation outside the sandbox", async () => {

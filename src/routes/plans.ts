@@ -12,6 +12,7 @@ import {
   publishDraft,
 } from "../plans.ts";
 import { dashboardPage } from "../views/dashboard.ts";
+import { withT3Theme } from "../t3Theme.ts";
 import { planFramePage, versionsPage, SUMMARY_COOKIE } from "../views/versions.ts";
 
 type Env = { Variables: { email: string } };
@@ -21,7 +22,7 @@ export const planRoutes = new Hono<Env>();
 planRoutes.use("*", requireSession);
 
 function serveHtml(c: Context, html: string): Response {
-  return c.body(html, 200, {
+  return c.body(withT3Theme(html), 200, {
     "Content-Type": "text/html; charset=utf-8",
     "Content-Security-Policy": "sandbox allow-scripts",
   });

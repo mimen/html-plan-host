@@ -88,7 +88,7 @@ Code rollback does not roll back data. Before a destructive schema change, take 
 
 ## Agent publishing
 
-The repo owns the [authoring skill](skills/html-plan/SKILL.md), its path and view helpers, and the [push skill](skills/html-plan-push/SKILL.md). Install a pushed, pinned revision independently on each agent machine:
+The repo owns the [authoring skill](skills/html-plan/SKILL.md) and the [push skill](skills/html-plan-push/SKILL.md). Install a pushed, pinned revision independently on each agent machine:
 
 ```sh
 python3 bin/bootstrap-agent --revision <full-commit-sha> \

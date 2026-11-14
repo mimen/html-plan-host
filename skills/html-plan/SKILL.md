@@ -1,95 +1,44 @@
 ---
 name: html-plan
-description: House style for a shareable HTML plan, reference, or deep-dive, one self-contained, heavily-cited HTML page a teammate opens once. Use for "html plan", "/html-plan", "write this up as an HTML doc", "make an html reference/deep-dive for X", or turning research and findings into one readable page. Composes writing and diagram skills, then publishes to a durable URL via html-plan-push.
+description: Make an HTML page a person will look at or use, and host it at a durable URL that opens on any machine. Plans, reports, references, design mockups, prototypes, comparisons, explainers. Use when a page will read or look better than chat, for "html plan", "/html-plan", "mock this up", "make a page for X", or "give me a link I can open on my other machine". Pushes with html-plan-push.
 metadata:
   author: milad
-  version: "1.0.0"
+  version: "2.0.0"
 ---
 
 # html-plan
 
-Produce one self-contained HTML page that stands on its own as a research
-report, reference, or plan. This skill is thin on purpose. It composes a few
-capabilities and adds the house conventions that make the result readable and
-citable, then publishes it to a durable URL.
+Make one self-contained HTML page, show it, and host it when it needs to travel. There is no house template. Pick the structure and the look the content calls for: a one-screen decision, a long reference with a table of contents, a clickable mockup, a gallery of design options, a chart. Two pages on different topics should not look alike unless the content is alike.
 
-## Reference skills
+## When a page earns its place
 
-For each skill below, prefer the locally installed version and invoke it rather
-than restating its rules. If it is not installed, read the vendored copy at
-`references/<name>/SKILL.md` (verbatim, attributed in `references/NOTICE.md`).
-Load them on demand, not up front. The publish step, **html-plan-push**, ships
-in this plugin, see Deliver.
+- The content is visual (a layout, a flow, a mockup, a chart) or long enough that headings and navigation help.
+- The user asks for a page, a mockup, a link, or something to open elsewhere.
+- Short answers, one decision, and status stay in chat. Approval always happens in chat, never on the page.
 
-| Skill | When to use |
-| --- | --- |
-| **html-research-reports** | Always, it's the spine. Self-contained HTML, TL;DR box, navigable sections, per-section sources, the secret-hygiene grep gate, deliberate aesthetic. Read it first. |
-| **unslop** | Always, every line. Cut AI tells. |
-| **technical-writing** | Always, every line. Diátaxis structure and sentence discipline. |
-| **html-architecture-diagrams** | A "what connects to what", data-flow, or deployment-topology picture. |
-| **html-svg-diagrams** | Any other diagram: flowchart, sequence, state machine, request/response timeline. |
-| **html-timeline-roadmap** | A rollout, phased plan, or timeline. |
-| **html-erd-explorer** | A database schema or data model. |
-| **html-comparison-matrix** | An options or build-vs-buy evaluation. |
-| **html-data-explorer** | A dataset or metrics to browse or chart. |
+## Make it render in both places
 
-## House structure
+T3 Code shows a page inline with `html_render`, and the plan host serves it in a browser tab. Write to T3's contract and the page looks native in both. The host injects the same theme tokens T3 does, with light and dark following the OS, plus a centered column on wide screens.
 
-- A sticky sidebar table of contents with numbered sections.
-- A "short version" TL;DR box at the top: the three to six things someone who
-  reads only the first screen needs.
-- Numbered sections, each ending with its own **Sources** footer listing the
-  repos, PRs, files, and threads that section drew on. Per-section citations,
-  not one list buried at the bottom.
-- [`references/plan-themes.md`](references/plan-themes.md) owns the look and
-  the layout. Three themes ship: **Margin** (editorial — sidebar, prose column,
-  right-margin sources), **Console**
-  ([`references/plan-themes-console.md`](references/plan-themes-console.md) — a
-  denser plan/brief look: numbered rail, stat strip, card panels), and
-  **Nocturne**
-  ([`references/plan-themes-nocturne.md`](references/plan-themes-nocturne.md) — a
-  technical reference look: step ladder, semantic notes, per-section citations).
-  **Console** is the default; use it unless the content or audience calls for
-  another. Paste the chosen theme's font link and CSS, then build on its markup
-  skeleton. Light
-  `:root` plus `prefers-color-scheme: dark`; do not hard-code a page-level dark
-  background or per-shape SVG fills. Follow the density rule in that file.
-- A footer with a visible last-updated date and the full source list.
+- Color with T3's CSS variables, never fixed colors for chrome: `--background`, `--foreground`, `--muted`, `--muted-foreground`, `--card`, `--popover`, `--secondary`, `--border`, `--ring`, `--primary`, `--accent`, `--destructive`, `--warning`, `--success`, `--info`, `--code-background`, each with a `-foreground` where one exists, `--accent-surface`, `--destructive-surface`, `--warning-surface`, `--chart-1` to `--chart-6`, `--radius`, `--font-sans`, `--font-mono`.
+- Leave `html` and `body` without a background, outer card, border, banner, or side padding. The base sheet paints the canvas.
+- Use fluid widths. T3's frame is 728px on desktop and about 360px on phones.
+- Never use `vh` units or `height: 100%` on `html` or `body`. T3 rejects them. Give charts fixed pixel heights and let content set the page height.
+- Boxes that need their own surface get `var(--card)`, 16px padding, and `var(--radius)` corners.
+- Inline all CSS and JS. Embed local images as data URIs or use `https` URLs. Relative paths to sibling files break on both surfaces.
 
-## House conventions the composed skills do not cover
+A design that must carry its own palette (a brand mockup, a poster, a dark-only UI) can set a background on `html` or `body`. The host then skips its injection and serves the page as written. Do this on purpose, not by habit.
 
-- **Cite everything, inline and readable.** Every repo, PR, file, playbook,
-  thread, and doc is a link. A reader should be able to check any claim without
-  asking.
-- **Quotes get attributed blockquotes**, with the speaker's name and a link to
-  the source, not folded into a sentence.
-- **Verify before asserting.** Read the actual code or doc before stating how
-  something works. If a claim cannot be verified, say so and hedge. Prefer a
-  background subagent for cross-repo fact-finding so the main thread stays clean.
-- **Correct in place, out loud.** When a new fact overturns something the doc
-  said, fix it and add a one-line note that an earlier version was wrong, rather
-  than editing quietly. The doc is a living record.
-- **Convey state by shape or label too, not color alone.**
+## Say what is real
 
-## Task guides
+- Link every claim a reader may want to check: repos, PRs, files, threads, docs. Read the source before asserting how something works, and mark anything unverified.
+- Label mockups and proposals as mockups and proposals, so nobody reads a design as shipped behavior.
+- When a new fact overturns the page, fix it and say in one line that an earlier version was wrong.
 
-| File | Read when |
-| --- | --- |
-| [`references/implementation-plan.md`](references/implementation-plan.md) | Creating or maintaining a semantically major implementation plan. It owns project-safe placement, local helpers, the persistent view, explicit approval, freeze, and the final shipped record. |
+## Show it and host it
 
-Implementation plans use that task-specific guide. Report and reference authoring
-continue to use the house structure and composed skills above.
-
-## Deliver
-
-1. Write the file to a descriptive path, `<topic>-<kind>.html`, under its project.
-2. Run the secret grep gate (from html-research-reports, or its vendored copy
-   `references/html-research-reports/SKILL.md`). It must exit clean before sharing.
-3. Publish it with **html-plan-push**. Prefer the installed skill. If that name is
-   unavailable, read the sibling [`html-plan-push` skill](../html-plan-push/SKILL.md)
-   and follow it directly. Do not invoke `html-plan` again through a local adapter.
-   Push the file as the draft and report the returned draft URL. Publishing a
-   numbered version is the human's action in the web UI.
-4. Optionally open it locally to review the rendered page: inside cmux, run
-   `cmux browser open-split "file://<absolute-path>" --focus true`; otherwise
-   `open <absolute-path>`. Do not use `cmux open <path>`, which shows raw markup.
+1. Write the file once per topic and keep editing that file. Put it in the project it is about, under `plans/` or the project's existing docs location, or in the session scratch directory when no project fits. Name it `<topic>.html`.
+2. In a T3 Code thread, show it inline: `html_preview` with the path to check layout and get `contentHeight`, then `html_render` with that height.
+3. Before pushing, check for secrets. This must print nothing:
+   `grep -nEi '(api[_-]?key|secret|token|password|bearer)["'"'"' ]*[:=] *["'"'"'][^"'"'"']{8,}|sk-[A-Za-z0-9]{20,}|ghp_[A-Za-z0-9]{20,}|AKIA[0-9A-Z]{16}' <file>`
+4. Push with the sibling [html-plan-push skill](../html-plan-push/SKILL.md) when the page should open on another machine or be shared, and give the user the draft URL. Push again with the same `--slug` after every material edit. A push writes a draft; publishing a numbered version is the user's button in the web UI.

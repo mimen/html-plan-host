@@ -40,12 +40,20 @@ apiRoutes.get("/plans/:slug", async (c) => {
 });
 
 interface PushBody {
-  slug?: string;
-  title?: string;
-  description?: string;
-  html?: string;
-  summary?: string;
-  updatedBy?: string;
+  slug?: string | null;
+  title?: string | null;
+  description?: string | null;
+  html?: string | null;
+  summary?: string | null;
+  updatedBy?: string | null;
+}
+
+function isPushBody(value: unknown): value is PushBody {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+  const fields = ["slug", "title", "description", "html", "summary", "updatedBy"];
+  return Object.entries(value).every(([key, field]) =>
+    !fields.includes(key) || field === null || typeof field === "string"
+  );
 }
 
 // The token can only write drafts. Minting a published version is a human,
@@ -55,11 +63,15 @@ apiRoutes.post("/plans", async (c) => {
     return c.json({ error: "Unauthorized" }, 401);
   }
 
-  let body: PushBody;
+  let body: unknown;
   try {
     body = await c.req.json();
   } catch {
     return c.json({ error: "Invalid JSON body" }, 400);
+  }
+
+  if (!isPushBody(body)) {
+    return c.json({ error: "body must be an object with string or null plan fields" }, 400);
   }
 
   const title = body.title?.trim();

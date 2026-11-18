@@ -57,7 +57,7 @@ function publish(headers: Record<string, string>, body = "draft=0"): Promise<Res
   }));
 }
 
-function push(body: Record<string, unknown>): Promise<Response> {
+function push(body: unknown): Promise<Response> {
   return Promise.resolve(app.request("https://internal.test/api/plans", {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${testEnv.PUBLISH_TOKEN}` },
@@ -130,6 +130,24 @@ describe("raw plan isolation", () => {
     expect(body).toContain('src="/p/test-plan/draft?raw=1"');
     expect(body).not.toContain("Interactive plan");
   });
+});
+
+describe("push body validation", () => {
+  test("keeps nullable optional fields and ignores unknown metadata", async () => {
+    pushDraft.mockImplementationOnce(async () => ({ slug: "test-plan", title: "Test plan", created: false }));
+    const response = await push({ title: "Test plan", html, slug: null, description: null, summary: null, updatedBy: null, metadata: { source: "test" } });
+    expect(response.status).toBe(200);
+    expect(pushDraft).toHaveBeenCalledWith({ title: "Test plan", html, slug: undefined, description: undefined, summary: undefined, updatedBy: "cli" });
+  });
+
+  test.each([null, [], "draft", 42, true, ...["slug", "title", "html", "description", "summary", "updatedBy"].flatMap((field) => [42, false, [], {}].map((value) => ({ title: "Test plan", html, [field]: value })))])(
+    "rejects malformed body %j without a server error or write",
+    async (body) => {
+      const response = await push(body);
+      expect(response.status).toBe(400);
+      expect(pushDraft).not.toHaveBeenCalled();
+    },
+  );
 });
 
 describe("push slug", () => {

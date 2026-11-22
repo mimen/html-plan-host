@@ -109,8 +109,9 @@ The response includes `created` (true for a new plan, false for an update),
 - Report `draftUrl` as the live draft.
 - Report `shareUrl` as the durable link, noting it reflects the last *published*
   version and only changes when the user publishes.
-- If you meant to update an existing plan but `created` is `true`, the `--slug`
-  did not match; stop and fix the slug rather than leaving a stray plan.
+- `html-plan push --slug` refuses a slug that matches no plan. The raw API
+  instead creates a plan under it: if you meant to update but `created` is
+  `true`, the slug did not match; stop and fix it rather than leaving a stray plan.
 
 Errors are JSON `{ "error": "..." }`. `401` is a bad or missing token; `400` is a
 missing `title` or `html`.

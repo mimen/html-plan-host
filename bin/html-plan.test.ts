@@ -79,3 +79,22 @@ test("unknown, stray, and valueless options fail before any request", async () =
     expect(result.error).toMatch(/unknown option|needs a value/);
   }
 });
+
+test("push --slug for a plan that does not exist fails instead of creating one", async () => {
+  const requests: string[] = [];
+  const server = Bun.serve({ port: 0, hostname: "127.0.0.1", fetch(request) {
+    requests.push(`${request.method} ${new URL(request.url).pathname}`);
+    return request.method === "GET"
+      ? Response.json({ error: "Not found" }, { status: 404 })
+      : Response.json({ created: true, title: "CLI fixture", draftUrl: "d", shareUrl: "s" }, { status: 201 });
+  } });
+  try {
+    const data = fixture(`http://127.0.0.1:${server.port}`);
+    const result = await cli(data.config, ["push", "--file", data.html, "--slug", "typo-slug"], { PLAN_HOST_TOKEN: "fixture-token" });
+    expect(result.code).toBe(1);
+    expect(result.error).toContain('no plan "typo-slug"');
+    expect(requests).toEqual(["GET /api/plans/typo-slug"]);
+  } finally {
+    server.stop(true);
+  }
+});

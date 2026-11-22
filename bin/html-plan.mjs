@@ -130,6 +130,15 @@ async function push(args) {
   const updatedBy =
     process.env.PLAN_HOST_AUTHOR || process.env.USER || process.env.LOGNAME || "cli";
 
+  // The API creates a plan under an unknown slug, so a mistyped --slug would fork a duplicate.
+  if (typeof args.slug === "string") {
+    const found = await fetch(`${baseUrl}/api/plans/${encodeURIComponent(args.slug)}`, {
+      headers: { Authorization: `Bearer ${token}` }, redirect: "error",
+    });
+    if (found.status === 404) die(`no plan "${args.slug}" to update; check the slug, or omit --slug to create a new plan`);
+    if (!found.ok) die(`push failed (${found.status}) looking up "${args.slug}"`);
+  }
+
   const res = await fetch(`${baseUrl}/api/plans`, {
     method: "POST",
     redirect: "error",

@@ -51,12 +51,20 @@ function parseArgs(argv, allowed) {
   return args;
 }
 
+// ponytail: common named entities only; an unlisted name stays literal.
+const NAMED = {
+  amp: "&", lt: "<", gt: ">", quot: '"', apos: "'", nbsp: "\u00a0",
+  mdash: "—", ndash: "–", middot: "·", hellip: "…", bull: "•", times: "×",
+  lsquo: "‘", rsquo: "’", ldquo: "“", rdquo: "”", rarr: "→", larr: "←", copy: "©",
+};
+
+// One pass, so "&amp;lt;" stays "&lt;" instead of decoding twice.
 function decodeEntities(s) {
-  return s
-    .replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"').replace(/&#0?39;/g, "'").replace(/&apos;/g, "'")
-    .replace(/&mdash;/g, "—").replace(/&ndash;/g, "–").replace(/&middot;/g, "·")
-    .replace(/&#(\d+);/g, (_, n) => String.fromCodePoint(Number(n)));
+  return s.replace(/&(?:#x([0-9a-f]+)|#(\d+)|([a-z]+));/gi, (ref, hex, dec, name) => {
+    if (name) return NAMED[name] ?? ref;
+    const code = parseInt(hex ?? dec, hex ? 16 : 10);
+    return code <= 0x10ffff ? String.fromCodePoint(code) : ref;
+  });
 }
 
 function titleFromHtml(html) {

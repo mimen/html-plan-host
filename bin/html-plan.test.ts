@@ -98,3 +98,22 @@ test("push --slug for a plan that does not exist fails instead of creating one",
     server.stop(true);
   }
 });
+
+test("push decodes each <title> entity once, including hex and curly quotes", async () => {
+  const titles: string[] = [];
+  const server = Bun.serve({ port: 0, hostname: "127.0.0.1", async fetch(request) {
+    titles.push(((await request.json()) as { title: string }).title);
+    return Response.json({ created: true, title: "t", draftUrl: "d", shareUrl: "s" }, { status: 201 });
+  } });
+  try {
+    const data = fixture(`http://127.0.0.1:${server.port}`);
+    for (const title of ["R&amp;amp;D &amp;lt;b&amp;gt;", "Q4 &#x2192; Q1&rsquo;s plan&nbsp;&hellip;", "Bad &#99999999; ref"]) {
+      writeFileSync(data.html, `<title>${title}</title><p>Draft</p>`);
+      const result = await cli(data.config, ["push", "--file", data.html], { PLAN_HOST_TOKEN: "fixture-token" });
+      expect(result.code).toBe(0);
+    }
+    expect(titles).toEqual(["R&amp;D &lt;b&gt;", "Q4 → Q1’s plan\u00a0…", "Bad &#99999999; ref"]);
+  } finally {
+    server.stop(true);
+  }
+});
